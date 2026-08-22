@@ -1,93 +1,105 @@
-# esp32-s3-lr1121-epaper-2.9
+# ESP32-S3-LR1121-ePaper-2.9
 
+[中文](README_ZH.md)
 
+This repository contains first-party ESP-IDF and Arduino examples, product
+images, and hardware documentation for the Waveshare
+ESP32-S3-LR1121-ePaper-2.9, product revision 1.0.0.
+
+![Front view](assets/product/front.png)
+
+![Back view](assets/product/back.png)
+
+## Repository status
+
+The source examples were reorganized without changing their functional code.
+The CI and firmware packaging definitions are ready for remote review, but no
+build, CI run, flash, or physical-board test was performed as part of this
+repository organization.
+
+The supplied schematic remains under pending review because one e-paper
+connector label conflicts with the product title. Mechanical drawings and
+factory recovery firmware are reserved for a later update.
 
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- ESP-IDF projects: [`examples/esp-idf/`](examples/esp-idf/)
+- Arduino sketches and bundled library: [`examples/arduino/`](examples/arduino/)
+- Hardware references: [`hardware/`](hardware/)
+- CI documentation: [`docs/ci.md`](docs/ci.md)
+- Firmware packages: [`releases/`](releases/)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Each numbered example is independent. Read the framework README and the README
+inside the selected example before building or flashing it.
 
-## Add your files
+## Examples
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+| Number | ESP-IDF | Arduino | Focus |
+| --- | --- | --- | --- |
+| 01 | `01_ws2812_led` | `01_ws2812_led` | Onboard WS2812 |
+| 02 | `02_i2c_scan` | `02_i2c_scan` | I2C device scan |
+| 03 | `03_epaper_2_9` | `03_epaper` | 2.9-inch e-paper |
+| 04 | `04_bat_axp2602` | `04_bat_axp2602` | AXP2602 battery gauge |
+| 05 | `05_rtc_pcf85063` | `05_rtc_pcf85063` | PCF85063A RTC |
+| 06 | `06_lr1121_pingpong` | `06_lr1121_pingpong` | LR1121 ping-pong |
+| 07 | `07_deep_sleep` | `07_deep_sleep` | Deep sleep |
+| 08 | `08_comprehensive_demo` | `08_comprehensive_demo` | Integrated board demo |
+| 09 | `09_lr1121_lorawan` | `09_lr1121_lorawan` | LoRaWAN Class A OTAA |
+| 10 | `10_LoRaWAN_ABP` | `10_LoRaWAN_ABP` | LoRaWAN Class A ABP |
+| 11 | `11_LoRaWAN_Class_C` | `11_LoRaWAN_Class_C` | LoRaWAN Class C |
+| 12 | `12_LoRaWAN_Multicast` | `12_LoRaWAN_Multicast` | LoRaWAN multicast |
 
-```
-cd existing_repo
-git remote add origin http://192.168.1.91/shiwei/esp32-s3-lr1121-epaper-2.9.git
-git branch -M main
-git push -uf origin main
-```
+LoRaWAN examples contain placeholder credentials. Configure credentials,
+region, frequency plan, antenna, and transmit power for the deployment before
+radio activation. Never publish real network keys in source code or logs.
 
-## Integrate with your tools
+## Continuous integration and Releases
 
-* [Set up project integrations](http://192.168.1.91/shiwei/esp32-s3-lr1121-epaper-2.9/-/settings/integrations)
+The GitHub Actions workflow discovers direct first-party examples and is
+configured for ESP-IDF v5.5.5, ESP-IDF v6.0.2, and Arduino-ESP32 3.3.11.
+Successful builds are designed to produce flashable ZIP archives containing a
+manifest, SHA-256 checksums, source binary segments, a combined image, and
+Windows/POSIX flash helpers. A `v*` tag is designed to publish those archives
+as a GitHub Release.
 
-## Collaborate with your team
+These configurations are statically checked only until they run in a real
+remote repository. CI compilation does not prove radio, display, power,
+sleep, timing, or other physical hardware behavior.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Repository layout
 
-## Test and Deploy
+| Path | Purpose |
+| --- | --- |
+| `examples/esp-idf/` | First-party ESP-IDF projects |
+| `examples/arduino/` | First-party Arduino sketches and bundled library |
+| `assets/` | Product images |
+| `hardware/` | Schematics and mechanical-document placeholders |
+| `config/` | Machine-readable CI configuration |
+| `scripts/` | Example discovery and static automation |
+| `releases/` | Source-build firmware packaging |
+| `firmware/` | Factory/recovery firmware placeholder |
+| `docs/` | Repository and maintainer documentation |
 
-Use the built-in continuous integration in GitLab.
+See [`docs/repository-structure.md`](docs/repository-structure.md) for
+generated-file and publication boundaries.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## Hardware documents
 
-***
+- Product images: [`assets/product/`](assets/product/)
+- Schematic pending review:
+  [`hardware/schematics/`](hardware/schematics/)
+- Mechanical drawings pending:
+  [`hardware/dimensions/`](hardware/dimensions/)
 
-# Editing this README
+## Support and contribution
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SUPPORT.md`](SUPPORT.md), and
+[`SECURITY.md`](SECURITY.md).
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Original software is licensed under Apache License 2.0. Original
+documentation, images, schematics, and hardware materials are licensed under
+CC BY 4.0. Nested third-party licenses remain authoritative. See
+[`LICENSES/README.md`](LICENSES/README.md) and
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

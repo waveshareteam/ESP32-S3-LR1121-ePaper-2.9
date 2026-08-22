@@ -1,0 +1,62 @@
+version: 1
+board: esp32_s3_lr1121_epaper_2_9
+chip: esp32s3
+
+devices:
+  status_led:
+    type: led_strip
+    sub_type: rmt
+
+  epaper_power_ctrl:
+    type: power_ctrl
+    sub_type: gpio
+    peripherals:
+    - gpio_epaper_power
+
+  epaper_ssd16xx:
+    type: custom
+    peripherals:
+    - spi_shared
+
+  rtc_pcf85063a:
+    type: custom
+    peripherals:
+    - i2c_master
+
+  bat_axp2602:
+    type: custom
+    peripherals:
+    - i2c_master
+
+  radio_lr1121:
+    type: custom
+    peripherals:
+    - spi_shared
+
+peripherals:
+  i2c_master:
+    type: i2c
+    role: master
+    io:
+      sda_io_num: 13
+      scl_io_num: 14
+
+  spi_shared:
+    type: spi
+    role: master
+    io:
+      mosi_io_num: 45
+      miso_io_num: 46
+      sclk_io_num: 40
+
+  gpio_boot:
+    type: gpio
+    role: io
+    io:
+      pin: 0
+
+  gpio_epaper_power:
+    type: gpio
+    role: io
+    io:
+      pin: 38

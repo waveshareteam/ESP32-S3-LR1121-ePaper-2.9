@@ -1,0 +1,30 @@
+# Environmental Variables
+.env
+
+# VS Code
+.vscode/
+
+# ESP-IDF
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+dependencies.lock
+
+# Python
+__pycache__/
+*.py[cod]
+
+# CI and release tooling
+/.ci-build/
+/release-artifacts/
+/releases/dist/
+/releases/downloads/
+
+# Local audit and render output
+/tmp/
+
+# Local repository metadata and recovery data
+/_backups/
+/.agents/
+/.codex/

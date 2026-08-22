@@ -1,0 +1,4 @@
+description: Waveshare board definitions for ESP Board Manager
+targets:
+  - esp32s3
+version: 0.2.0

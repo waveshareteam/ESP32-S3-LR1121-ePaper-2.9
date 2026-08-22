@@ -1,0 +1,8 @@
+menu "AXP2602 Battery Gauge Example"
+
+    config EXAMPLE_AXP2602_POLL_INTERVAL_MS
+        int "Battery polling interval (ms)"
+        range 1000 60000
+        default 30000
+
+endmenu

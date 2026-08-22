@@ -1,0 +1,7 @@
+dependencies:
+  idf: ">=5.4.3"
+  lvgl/lvgl: "^9.4.0"
+description: Shared 1-bpp Terminus font for the 2.9-inch e-paper demos
+targets:
+  - esp32s3
+version: 1.0.0

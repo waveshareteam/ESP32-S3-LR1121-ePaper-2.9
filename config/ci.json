@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "board": {
+    "name": "ESP32-S3-LR1121-ePaper-2.9",
+    "revision": "1.0.0",
+    "module": "ESP32-S3-WROOM-1-N16R8",
+    "target": "esp32s3"
+  },
+  "esp_idf": {
+    "versions": [
+      "v5.5.5",
+      "v6.0.2"
+    ]
+  },
+  "arduino": {
+    "cli": "1.5.1",
+    "core": "3.3.11",
+    "fqbn": "esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi"
+  }
+}
