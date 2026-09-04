@@ -25,6 +25,9 @@ struct Pins {
   static constexpr uint8_t kRtcIrq = 7;
   static constexpr uint8_t kEpaperBusy = 8;
   static constexpr uint8_t kEpaperReset = 9;
+  static constexpr uint8_t kSdCmd = 10;
+  static constexpr uint8_t kSdD0 = 11;
+  static constexpr uint8_t kSdClk = 12;
   static constexpr uint8_t kI2cSda = 13;
   static constexpr uint8_t kI2cScl = 14;
   static constexpr uint8_t kEpaperDc = 17;

@@ -9,7 +9,7 @@
 - Source/API coverage: LR1121, LoRaWAN OTAA and ABP, Class A and Class C,
   `startMulticastSession`, persistent nonce/session buffers, and downlink event
   metadata.
-- Project evidence: the ESP-IDF examples 09-12 already pin RadioLib 7.7.1.
+- Project evidence: the ESP-IDF examples 10-13 already pin RadioLib 7.7.1.
 
 The bundled Waveshare library declares `RadioLib (=7.7.1)` as its only
 external dependency. The exact pin is required because this adapter uses the

@@ -1,3 +1,4 @@
 idf_component_register(SRCS "main.c"
                        INCLUDE_DIRS "."
-                       REQUIRES led_strip esp_driver_gpio freertos log)
+                       REQUIRES esp_board_manager gen_bmgr_codes led_strip
+                                freertos log)

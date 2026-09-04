@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "axp2602.h"
 #include "esp_board_manager_includes.h"
 #include "esp_check.h"
 #include "esp_log.h"
@@ -30,15 +29,6 @@ typedef struct {
     bool isr_added;
 } board_rtc_device_t;
 
-typedef struct {
-    axp2602_t device;
-    const char *bus_name;
-    float idle_current_threshold_ma;
-    uint8_t sense_resistor_mohm;
-    bool bus_referenced;
-    bool sleeping;
-} board_axp2602_device_t;
-
 static const char *TAG = "board_support";
 static bool s_ops_registered;
 static bool s_shared_power_gpio_configured;
@@ -47,7 +37,6 @@ static bool s_shared_power_log_emitted;
 static i2c_master_bus_handle_t s_i2c_bus;
 static dev_led_strip_handles_t *s_status_led;
 static board_rtc_device_t *s_rtc;
-static board_axp2602_device_t *s_axp2602;
 static SemaphoreHandle_t s_spi_mutex;
 static portMUX_TYPE s_spi_init_lock = portMUX_INITIALIZER_UNLOCKED;
 static periph_spi_handle_t *s_spi_handle;
@@ -464,108 +453,6 @@ static int rtc_device_deinit(void *device_handle)
     return ESP_OK;
 }
 
-static esp_err_t axp2602_resistor_from_mohm(int value,
-                                            axp2602_sense_resistor_t *resistor)
-{
-    ESP_RETURN_ON_FALSE(resistor, ESP_ERR_INVALID_ARG, TAG, "resistor output is null");
-    switch (value) {
-    case 5:
-        *resistor = AXP2602_SENSE_RESISTOR_5_MOHM;
-        return ESP_OK;
-    case 10:
-        *resistor = AXP2602_SENSE_RESISTOR_10_MOHM;
-        return ESP_OK;
-    case 20:
-        *resistor = AXP2602_SENSE_RESISTOR_20_MOHM;
-        return ESP_OK;
-    case 40:
-        *resistor = AXP2602_SENSE_RESISTOR_40_MOHM;
-        return ESP_OK;
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
-}
-
-static int axp2602_device_init(void *raw_config, int config_size, void **device_handle)
-{
-    if (!raw_config || !device_handle ||
-        config_size != sizeof(dev_custom_bat_axp2602_config_t)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const dev_custom_bat_axp2602_config_t *config = raw_config;
-    if (config->address != AXP2602_I2C_ADDRESS || config->frequency != 400000 ||
-        config->peripheral_count != 1 || !config->peripheral_name ||
-        strcmp(config->peripheral_name, BOARD_PERIPH_I2C) != 0 ||
-        config->idle_current_threshold_ma < 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    axp2602_sense_resistor_t resistor;
-    esp_err_t ret = axp2602_resistor_from_mohm(config->sense_resistor_mohm, &resistor);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    board_axp2602_device_t *handle = calloc(1, sizeof(*handle));
-    if (!handle) {
-        return ESP_ERR_NO_MEM;
-    }
-    handle->bus_name = config->peripheral_name;
-    handle->idle_current_threshold_ma = config->idle_current_threshold_ma;
-    handle->sense_resistor_mohm = (uint8_t)config->sense_resistor_mohm;
-
-    i2c_master_bus_handle_t bus = NULL;
-    ret = esp_board_periph_ref_handle(handle->bus_name, (void **)&bus);
-    if (ret == ESP_OK) {
-        handle->bus_referenced = true;
-        ret = i2c_master_probe(bus, (uint8_t)config->address, BOARD_I2C_TIMEOUT_MS);
-    }
-    if (ret == ESP_OK) {
-        ret = axp2602_init(&handle->device, bus, resistor);
-    }
-    if (ret != ESP_OK) {
-        if (handle->bus_referenced) {
-            if (esp_board_periph_unref_handle(handle->bus_name) == ESP_OK) {
-                handle->bus_referenced = false;
-            }
-        }
-        free(handle);
-        return ret;
-    }
-
-    *device_handle = handle;
-    return ESP_OK;
-}
-
-static int axp2602_device_deinit(void *device_handle)
-{
-    board_axp2602_device_t *handle = device_handle;
-    if (!handle) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    esp_err_t ret = axp2602_deinit(&handle->device);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "deinitialize AXP2602 failed during cleanup: %s",
-                 esp_err_to_name(ret));
-        return ret;
-    }
-    if (handle->bus_referenced) {
-        ret = esp_board_periph_unref_handle(handle->bus_name);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "release AXP2602 I2C bus failed during cleanup: %s",
-                     esp_err_to_name(ret));
-            return ret;
-        }
-        handle->bus_referenced = false;
-    }
-    if (s_axp2602 == handle) {
-        s_axp2602 = NULL;
-    }
-    free(handle);
-    return ESP_OK;
-}
-
 esp_err_t board_support_prepare(void)
 {
     ESP_RETURN_ON_ERROR(board_shared_power_enable(), TAG,
@@ -578,11 +465,6 @@ esp_err_t board_support_prepare(void)
     if (!s_ops_registered) {
         ret = esp_board_device_set_ops(BOARD_DEVICE_RTC,
                                        rtc_device_init, rtc_device_deinit);
-        if (ret == ESP_OK) {
-            ret = esp_board_device_set_ops(BOARD_DEVICE_AXP2602,
-                                           axp2602_device_init,
-                                           axp2602_device_deinit);
-        }
         if (ret == ESP_OK) {
             s_ops_registered = true;
         }
@@ -721,82 +603,6 @@ esp_err_t board_rtc_get_interrupt_status(board_rtc_interrupt_status_t *status)
         .gpio_level = gpio_get_level(s_rtc->int_gpio),
         .control2 = ctrl2,
     };
-    return ESP_OK;
-}
-
-esp_err_t board_axp2602_init(void)
-{
-    if (s_axp2602) {
-        if (s_axp2602->sleeping) {
-            ESP_RETURN_ON_ERROR(axp2602_wake(&s_axp2602->device), TAG,
-                                "wake AXP2602 failed");
-            s_axp2602->sleeping = false;
-        }
-        return ESP_OK;
-    }
-    ESP_RETURN_ON_ERROR(board_support_prepare(), TAG, "prepare board support failed");
-    ESP_RETURN_ON_ERROR(esp_board_manager_init_device_by_name(BOARD_DEVICE_AXP2602),
-                        TAG, "initialize AXP2602 failed");
-    esp_err_t ret = esp_board_manager_get_device_handle(BOARD_DEVICE_AXP2602,
-                                                        (void **)&s_axp2602);
-    if (ret != ESP_OK || !s_axp2602) {
-        esp_board_manager_deinit_device_by_name(BOARD_DEVICE_AXP2602);
-        return ret == ESP_OK ? ESP_ERR_INVALID_STATE : ret;
-    }
-    return ESP_OK;
-}
-
-esp_err_t board_axp2602_get_info(board_axp2602_info_t *info)
-{
-    ESP_RETURN_ON_FALSE(info, ESP_ERR_INVALID_ARG, TAG, "AXP2602 info output is null");
-    ESP_RETURN_ON_ERROR(board_axp2602_init(), TAG, "AXP2602 init failed");
-
-    axp2602_data_t data = {0};
-    ESP_RETURN_ON_ERROR(axp2602_read(&s_axp2602->device, &data),
-                        TAG, "AXP2602 read failed");
-    board_axp2602_state_t state = BOARD_AXP2602_STATE_IDLE;
-    if (data.current_ma > s_axp2602->idle_current_threshold_ma) {
-        state = BOARD_AXP2602_STATE_CHARGING;
-    } else if (data.current_ma < -s_axp2602->idle_current_threshold_ma) {
-        state = BOARD_AXP2602_STATE_DISCHARGING;
-    }
-    *info = (board_axp2602_info_t) {
-        .voltage_mv = data.voltage_mv,
-        .current_ma = data.current_ma,
-        .ic_temperature_c = data.ic_temperature_c,
-        .state_of_charge_percent = data.soc_percent,
-        .time_to_empty_min = data.time_to_empty_min,
-        .time_to_full_min = data.time_to_full_min,
-        .sense_resistor_mohm = s_axp2602->sense_resistor_mohm,
-        .state = state,
-    };
-    return ESP_OK;
-}
-
-esp_err_t board_axp2602_configure_irq(uint8_t enabled_events, bool pulse_mode)
-{
-    ESP_RETURN_ON_ERROR(board_axp2602_init(), TAG, "AXP2602 init failed");
-    return axp2602_configure_irq(&s_axp2602->device, enabled_events, pulse_mode);
-}
-
-esp_err_t board_axp2602_get_irq_status(uint8_t *status)
-{
-    ESP_RETURN_ON_ERROR(board_axp2602_init(), TAG, "AXP2602 init failed");
-    return axp2602_get_irq_status(&s_axp2602->device, status);
-}
-
-esp_err_t board_axp2602_clear_irq_status(uint8_t status)
-{
-    ESP_RETURN_ON_ERROR(board_axp2602_init(), TAG, "AXP2602 init failed");
-    return axp2602_clear_irq_status(&s_axp2602->device, status);
-}
-
-esp_err_t board_axp2602_sleep(void)
-{
-    ESP_RETURN_ON_ERROR(board_axp2602_init(), TAG, "AXP2602 init failed");
-    ESP_RETURN_ON_ERROR(axp2602_sleep(&s_axp2602->device), TAG,
-                        "put AXP2602 to sleep failed");
-    s_axp2602->sleeping = true;
     return ESP_OK;
 }
 

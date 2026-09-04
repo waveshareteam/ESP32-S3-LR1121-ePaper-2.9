@@ -12,10 +12,10 @@ ESP32-S3-LR1121-ePaper-2.9, product revision 1.0.0.
 
 ## Repository status
 
-The source examples were reorganized without changing their functional code.
-The CI and firmware packaging definitions are ready for remote review, but no
-build, CI run, flash, or physical-board test was performed as part of this
-repository organization.
+The source examples are organized as matching ESP-IDF and Arduino surfaces,
+including a standalone 1-bit SDMMC card test. The CI and firmware packaging
+definitions cover every first-party example. Compilation and CI do not replace
+flashing and physical-board validation.
 
 The supplied schematic remains under pending review because one e-paper
 connector label conflicts with the product title. Mechanical drawings and
@@ -42,12 +42,13 @@ inside the selected example before building or flashing it.
 | 04 | `04_bat_axp2602` | `04_bat_axp2602` | AXP2602 battery gauge |
 | 05 | `05_rtc_pcf85063` | `05_rtc_pcf85063` | PCF85063A RTC |
 | 06 | `06_lr1121_pingpong` | `06_lr1121_pingpong` | LR1121 ping-pong |
-| 07 | `07_deep_sleep` | `07_deep_sleep` | Deep sleep |
-| 08 | `08_comprehensive_demo` | `08_comprehensive_demo` | Integrated board demo |
-| 09 | `09_lr1121_lorawan` | `09_lr1121_lorawan` | LoRaWAN Class A OTAA |
-| 10 | `10_LoRaWAN_ABP` | `10_LoRaWAN_ABP` | LoRaWAN Class A ABP |
-| 11 | `11_LoRaWAN_Class_C` | `11_LoRaWAN_Class_C` | LoRaWAN Class C |
-| 12 | `12_LoRaWAN_Multicast` | `12_LoRaWAN_Multicast` | LoRaWAN multicast |
+| 07 | `07_sd_card` | `07_sd_card` | microSD 1-bit SDMMC read/write test |
+| 08 | `08_deep_sleep` | `08_deep_sleep` | Deep sleep |
+| 09 | `09_comprehensive_demo` | `09_comprehensive_demo` | Integrated board demo |
+| 10 | `10_lr1121_lorawan` | `10_lr1121_lorawan` | LoRaWAN Class A OTAA |
+| 11 | `11_LoRaWAN_ABP` | `11_LoRaWAN_ABP` | LoRaWAN Class A ABP |
+| 12 | `12_LoRaWAN_Class_C` | `12_LoRaWAN_Class_C` | LoRaWAN Class C |
+| 13 | `13_LoRaWAN_Multicast` | `13_LoRaWAN_Multicast` | LoRaWAN multicast |
 
 LoRaWAN examples contain placeholder credentials. Configure credentials,
 region, frequency plan, antenna, and transmit power for the deployment before

@@ -5,17 +5,21 @@ onboard WS2812. Its normalized project directory is `01_ws2812_led`.
 
 ## Hardware and driver configuration
 
-- Data GPIO: GPIO21, from the current board-level `status_led` peripheral.
-- Power enable: GPIO38 (`gpio_epaper_power`), active high. Startup drives it
-  to level 1 and waits 100 ms before initializing the strip.
+- Board integration: `espressif/esp_board_manager` 0.6.1. The application gets
+  the `status_led` handle from Board Manager instead of creating an RMT strip
+  from hard-coded GPIO and timing values.
+- Data GPIO: GPIO21, provided by the current `status_led` board definition.
+- Power enable: GPIO38 (`gpio_epaper_power`), active high. Startup asks Board
+  Manager to power `epaper_ssd16xx`, which enables the shared supply, and waits
+  100 ms before initializing the strip.
 - LED count: 1, matching the single onboard status LED represented by the board
   definition.
-- Pixel format: GRB, configured explicitly for the WS2812 through Espressif's
-  `led_strip` driver.
+- Pixel format: GRB, supplied by the Board Manager device definition and used
+  through Espressif's `led_strip` handle.
 - Maximum channel value: 48/255 (about 19 percent) to limit glare and peak
   current.
-- Backend: RMT at 10 MHz. The shared SPI bus remains available to the e-paper
-  and LR1121 devices.
+- Backend: RMT at 10 MHz, supplied by the Board Manager device definition. The
+  shared SPI bus remains available to the e-paper and LR1121 devices.
 
 The project files do not include the carrier-board schematic or a pixel-count
 field. GPIO21 and the active-high GPIO38 power control are backed by the current
@@ -24,7 +28,8 @@ confirmed by observing the RED, GREEN, and BLUE stages on the target board.
 
 ## Test sequence
 
-At startup, the example enables `gpio_epaper_power` before the visible stages:
+At startup, the example initializes Board Manager and enables the shared
+`epaper_ssd16xx` power domain before the visible stages:
 
 1. Pure red for 1.2 seconds.
 2. Pure green for 1.2 seconds.

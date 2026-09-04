@@ -19,7 +19,6 @@ extern "C" {
 #define BOARD_DEVICE_STATUS_LED "status_led"
 #define BOARD_DEVICE_EPAPER     "epaper_ssd16xx"
 #define BOARD_DEVICE_RTC        "rtc_pcf85063a"
-#define BOARD_DEVICE_AXP2602    "bat_axp2602"
 #define BOARD_DEVICE_RADIO      "radio_lr1121"
 
 typedef enum {
@@ -44,23 +43,6 @@ typedef struct {
     int gpio_level;
     uint8_t control2;
 } board_rtc_interrupt_status_t;
-
-typedef enum {
-    BOARD_AXP2602_STATE_IDLE = 0,
-    BOARD_AXP2602_STATE_CHARGING,
-    BOARD_AXP2602_STATE_DISCHARGING,
-} board_axp2602_state_t;
-
-typedef struct {
-    uint16_t voltage_mv;
-    float current_ma;
-    int8_t ic_temperature_c;
-    uint8_t state_of_charge_percent;
-    uint16_t time_to_empty_min;
-    uint16_t time_to_full_min;
-    uint8_t sense_resistor_mohm;
-    board_axp2602_state_t state;
-} board_axp2602_info_t;
 
 typedef struct {
     gpio_num_t busy;
@@ -112,10 +94,6 @@ esp_err_t board_rtc_start_1hz_timer_interrupt(void);
 esp_err_t board_rtc_clear_interrupt_flags(void);
 esp_err_t board_rtc_get_interrupt_status(board_rtc_interrupt_status_t *status);
 uint32_t board_rtc_get_interrupt_count(void);
-
-esp_err_t board_axp2602_init(void);
-esp_err_t board_axp2602_get_info(board_axp2602_info_t *info);
-esp_err_t board_axp2602_sleep(void);
 
 esp_err_t board_prepare_gpio_deep_sleep(void);
 

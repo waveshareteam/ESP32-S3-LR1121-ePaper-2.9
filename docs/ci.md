@@ -5,11 +5,11 @@ The `Build Examples and Firmware` GitHub Actions workflow uses
 
 | Surface | Configured version | Target | Entries |
 | --- | --- | --- | --- |
-| ESP-IDF | `v5.5.5` | `esp32s3` | 12 |
-| ESP-IDF | `v6.0.2` | `esp32s3` | 12 |
-| Arduino CLI / Arduino-ESP32 | `1.5.1` / `3.3.11` | ESP32S3 Dev Module | 12 |
+| ESP-IDF | `v5.5.5` | `esp32s3` | 13 |
+| ESP-IDF | `v6.0.2` | `esp32s3` | 13 |
+| Arduino CLI / Arduino-ESP32 | `1.5.1` / `3.3.11` | ESP32S3 Dev Module | 13 |
 
-The configured full matrix contains 36 firmware build jobs. This matrix has
+The configured full matrix contains 39 firmware build jobs. This matrix has
 not yet run for this repository. Version pins and board options are
 machine-readable in `config/ci.json`.
 

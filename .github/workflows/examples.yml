@@ -64,8 +64,8 @@ jobs:
           python3 -m json.tool config/ci.json >/dev/null
       - name: Check the first-party inventory
         run: |
-          python3 scripts/discover_examples.py --surface esp-idf --expect-examples 12 >/dev/null
-          python3 scripts/discover_examples.py --surface arduino --expect-examples 12 >/dev/null
+          python3 scripts/discover_examples.py --surface esp-idf --expect-examples 13 >/dev/null
+          python3 scripts/discover_examples.py --surface arduino --expect-examples 13 >/dev/null
       - name: Validate the manual selector
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -91,7 +91,7 @@ jobs:
             --surface esp-idf \
             --selector "$TARGET_SELECTOR" \
             --allow-empty-selector \
-            --expect-examples 12 \
+            --expect-examples 13 \
             --github-output "$GITHUB_OUTPUT"
 
   build-esp-idf:
@@ -164,7 +164,7 @@ jobs:
             --surface arduino \
             --selector "$TARGET_SELECTOR" \
             --allow-empty-selector \
-            --expect-examples 12 \
+            --expect-examples 13 \
             --github-output "$GITHUB_OUTPUT"
 
   build-arduino:

@@ -9,9 +9,11 @@ one WS2812 LED.
 
 The example pin assignments are documented in
 [`examples/arduino/README.md`](examples/arduino/README.md) and represented in
-the ESP-IDF board definitions. They remain implementation references rather
-than a released hardware specification while the supplied schematic is under
-review.
+the ESP-IDF board definitions. The schematic and the existing comprehensive
+test both map the 1-bit SDMMC interface to GPIO10/CMD, GPIO11/D0, and
+GPIO12/CLK, with the card on the GPIO38-controlled 3.3 V domain. These remain
+implementation references rather than a released hardware specification while
+the supplied schematic is under review.
 
 The schematic filename identifies PCB document revision Rev1.1, which is
 tracked separately from product revision 1.0.0. One e-paper connector block is

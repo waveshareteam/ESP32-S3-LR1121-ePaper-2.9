@@ -70,7 +70,7 @@ const static periph_gpio_config_t esp_bmgr_gpio_epaper_power_cfg = {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     },
-    .default_level = 0,
+    .default_level = 1,
 };
 
 // Peripheral descriptor array

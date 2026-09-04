@@ -11,13 +11,18 @@ ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "libraries" / "Waveshare_LR1121_EPaper"
 EXPECTED = [
     "01_ws2812_led", "02_i2c_scan", "03_epaper", "04_bat_axp2602",
-    "05_rtc_pcf85063", "06_lr1121_pingpong", "07_deep_sleep",
-    "08_comprehensive_demo", "09_lr1121_lorawan", "10_LoRaWAN_ABP",
-    "11_LoRaWAN_Class_C", "12_LoRaWAN_Multicast",
+    "05_rtc_pcf85063", "06_lr1121_pingpong", "07_sd_card",
+    "08_deep_sleep", "09_comprehensive_demo", "10_lr1121_lorawan",
+    "11_LoRaWAN_ABP", "12_LoRaWAN_Class_C", "13_LoRaWAN_Multicast",
+]
+LORAWAN_EXAMPLES = [
+    "10_lr1121_lorawan", "11_LoRaWAN_ABP", "12_LoRaWAN_Class_C",
+    "13_LoRaWAN_Multicast",
 ]
 FRAMEWORK_HEADERS = {
-    "Arduino.h", "Preferences.h", "RadioLib.h", "SPI.h", "WiFi.h",
-    "Wire.h", "cstring", "esp32-hal-rgb-led.h", "esp_sleep.h",
+    "Arduino.h", "FS.h", "Preferences.h", "RadioLib.h", "SD_MMC.h",
+    "SPI.h", "WiFi.h", "Wire.h", "cstring", "esp32-hal-rgb-led.h",
+    "esp_sleep.h",
 }
 
 
@@ -33,8 +38,9 @@ def text(path: Path) -> str:
 
 def code_files() -> list[Path]:
     suffixes = {".h", ".cpp", ".ino"}
+    bases = [LIB / "src", *(ROOT / name for name in EXPECTED)]
     return [
-        path for base in (LIB / "src", ROOT)
+        path for base in bases
         for path in base.rglob("*") if path.suffix in suffixes
     ]
 
@@ -142,8 +148,9 @@ def check_hardware_contract() -> None:
     board = text(LIB / "src" / "WaveshareBoard.h")
     expected_pins = {
         "kBoot": 0, "kRadioButton": 1, "kRadioDio1": 6, "kRtcIrq": 7,
-        "kEpaperBusy": 8, "kEpaperReset": 9, "kI2cSda": 13,
-        "kI2cScl": 14, "kEpaperDc": 17, "kEpaperCs": 18,
+        "kEpaperBusy": 8, "kEpaperReset": 9, "kSdCmd": 10,
+        "kSdD0": 11, "kSdClk": 12, "kI2cSda": 13, "kI2cScl": 14,
+        "kEpaperDc": 17, "kEpaperCs": 18,
         "kWs2812": 21, "kSharedPower": 38, "kRadioReset": 39,
         "kSpiSck": 40, "kRadioBusy": 41, "kRadioCs": 42,
         "kSpiMosi": 45, "kSpiMiso": 46, "kChargeStatus": 47,
@@ -182,7 +189,7 @@ def check_hardware_contract() -> None:
 
 
 def check_credentials() -> None:
-    for name in EXPECTED[8:]:
+    for name in LORAWAN_EXAMPLES:
         directory = ROOT / name
         sketch = text(directory / f"{name}.ino")
         headers = list(directory.glob("*credentials.h"))
@@ -213,9 +220,9 @@ def check_fcnt_persistence() -> None:
     )
 
     expected_calls = {
-        "09_lr1121_lorawan": 1,
-        "10_LoRaWAN_ABP": 1,
-        "11_LoRaWAN_Class_C": 2,
+        "10_lr1121_lorawan": 1,
+        "11_LoRaWAN_ABP": 1,
+        "12_LoRaWAN_Class_C": 2,
     }
     for name, count in expected_calls.items():
         sketch = text(ROOT / name / f"{name}.ino")
@@ -233,8 +240,8 @@ def check_fcnt_persistence() -> None:
 
 def check_multicast_safety() -> None:
     multicast = text(
-        ROOT / "12_LoRaWAN_Multicast" /
-        "12_LoRaWAN_Multicast.ino"
+        ROOT / "13_LoRaWAN_Multicast" /
+        "13_LoRaWAN_Multicast.ino"
     )
     for contract in (
         "lastMulticastCounter == UINT32_MAX",
@@ -276,7 +283,7 @@ def check_docs_and_language() -> None:
     for target in re.findall(r"`(examples/arduino/[^ `]+)`", readme):
         resolved = ROOT.parents[1] / target.rstrip(".,")
         require(resolved.exists(), f"README path missing: {target}")
-    require("not compiled or uploaded" in readme,
+    require("successful Verify proves compilation only" in readme,
             "README lacks validation boundary")
     require("forceHighPower=true" in readme and "HP antenna path" in readme,
             "README lacks the default LR1121 HP path")
