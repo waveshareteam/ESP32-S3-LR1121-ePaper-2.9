@@ -6,9 +6,7 @@ This repository contains first-party ESP-IDF and Arduino examples, product
 images, and hardware documentation for the Waveshare
 ESP32-S3-LR1121-ePaper-2.9, product revision 1.0.0.
 
-![Front view](assets/product/front.png)
-
-![Back view](assets/product/back.png)
+![Front view](docs/images/front.png)
 
 ## Repository status
 

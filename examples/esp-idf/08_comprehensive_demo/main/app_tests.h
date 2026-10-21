@@ -54,6 +54,7 @@ typedef enum {
     APP_EVENT_BUTTON_GPIO0 = 1,
     APP_EVENT_BUTTON_GPIO1,
     APP_EVENT_RADIO_TX_DONE,
+    APP_EVENT_SELF_TEST_DONE,
 } app_runtime_event_type_t;
 
 typedef struct {
@@ -126,4 +127,3 @@ void app_runtime_start(void);
 #ifdef __cplusplus
 }
 #endif
-

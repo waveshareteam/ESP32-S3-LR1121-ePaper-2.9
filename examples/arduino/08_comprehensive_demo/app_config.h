@@ -1,0 +1,27 @@
+#pragma once
+
+// Configure STA only when needed. Never commit real network credentials.
+#define TEST_WIFI_STA_SSID ""
+#define TEST_WIFI_STA_PASSWORD ""
+#define TEST_WIFI_AP_SSID "LR1121-S3-TEST"
+#define TEST_WIFI_AP_PASSWORD "lr1121test"
+#define TEST_WIFI_AP_CHANNEL 6
+#define TEST_WIFI_AP_MAX_CONN 4
+#define TEST_DEVICE_ID "S3-LR1121-XF"
+
+// Match the ESP-IDF example; select a legal profile for your region and antenna.
+#define TEST_LORA_FREQUENCY_MHZ 868.0f
+#define TEST_LORA_BANDWIDTH_KHZ 125.0f
+#define TEST_LORA_SPREADING_FACTOR 7
+#define TEST_LORA_CODING_RATE 5
+#define TEST_LORA_SYNC_WORD 0x12
+#define TEST_LORA_OUTPUT_POWER_DBM 22
+#define TEST_LORA_PREAMBLE_LENGTH 8
+
+#define TEST_BUTTON_DEBOUNCE_MS 40U
+#define TEST_GPIO0_DOUBLE_CLICK_MS 600U
+#define TEST_BUTTON_RELEASE_MS 100U
+#define TEST_UART_STATUS_PERIOD_MS 30000U
+#define TEST_EPAPER_SUMMARY_HOLD_MS 2000U
+#define TEST_EPAPER_STATUS_PERIOD_MS 300000U
+#define TEST_EPAPER_RX_MIN_INTERVAL_MS 2000U

@@ -21,7 +21,9 @@ static const char *TAG = "stress";
 #define STRESS_CORE1_DONE          BIT1
 #define STRESS_INTERNAL_PER_CORE   (32U * 1024U)
 #define STRESS_PSRAM_PER_CORE      (512U * 1024U)
-#define STRESS_INTERNAL_RESERVE    (96U * 1024U)
+/* Leave room for both worker stacks, the radio task and runtime allocations. */
+#define STRESS_INTERNAL_RESERVE    (48U * 1024U)
+#define STRESS_INTERNAL_MIN        (4U * 1024U)
 #define STRESS_PSRAM_RESERVE       (512U * 1024U)
 #define STRESS_HASH_BLOCK_SIZE     1024U
 
@@ -157,18 +159,21 @@ static void stress_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static size_t allocation_size(uint32_t caps, size_t desired, size_t reserve)
+static size_t allocation_size(uint32_t caps, size_t desired, size_t reserve,
+                              size_t worker_count)
 {
     const size_t free_bytes = heap_caps_get_free_size(caps);
     const size_t largest = heap_caps_get_largest_free_block(caps);
-    if (free_bytes <= reserve) {
+    if (worker_count == 0 || free_bytes <= reserve) {
         return 0;
     }
-    size_t allowed = (free_bytes - reserve) / 2U;
+    size_t allowed = (free_bytes - reserve) / worker_count;
     if (allowed > desired) {
         allowed = desired;
     }
-    return allowed < largest ? allowed : largest;
+    /* Do not assume that two allocations of the largest block will fit. */
+    const size_t contiguous_per_worker = largest / worker_count;
+    return allowed < contiguous_per_worker ? allowed : contiguous_per_worker;
 }
 
 static void free_worker_buffers(void)
@@ -187,14 +192,28 @@ static esp_err_t allocate_worker_buffers(size_t worker_count)
 {
     const size_t internal_size = allocation_size(
         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT,
-        STRESS_INTERNAL_PER_CORE, STRESS_INTERNAL_RESERVE);
+        STRESS_INTERNAL_PER_CORE, STRESS_INTERNAL_RESERVE, worker_count);
     const size_t psram_total = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
     const size_t psram_size = psram_total == 0
                                   ? 0
                                   : allocation_size(
                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT,
                                         STRESS_PSRAM_PER_CORE,
-                                        STRESS_PSRAM_RESERVE);
+                                        STRESS_PSRAM_RESERVE, worker_count);
+
+    ESP_LOGI(TAG,
+             "buffer budget: internal free=%u largest=%u reserve=%u per_core=%u; "
+             "PSRAM free=%u largest=%u per_core=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)STRESS_INTERNAL_RESERVE, (unsigned)internal_size,
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT),
+             (unsigned)psram_size);
+    if (internal_size < STRESS_INTERNAL_MIN || psram_size == 0) {
+        ESP_LOGE(TAG, "insufficient RAM/PSRAM budget; full memory stress cannot run");
+        return ESP_ERR_NO_MEM;
+    }
 
     for (size_t i = 0; i < worker_count; i++) {
         s_workers[i].core = (uint32_t)i;
@@ -203,6 +222,8 @@ static esp_err_t allocate_worker_buffers(size_t worker_count)
         s_workers[i].internal = heap_caps_malloc(
             internal_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (!s_workers[i].internal) {
+            ESP_LOGE(TAG, "core%u internal buffer allocation failed: %u bytes",
+                     (unsigned)i, (unsigned)internal_size);
             free_worker_buffers();
             return ESP_ERR_NO_MEM;
         }
@@ -210,6 +231,8 @@ static esp_err_t allocate_worker_buffers(size_t worker_count)
             s_workers[i].psram = heap_caps_malloc(
                 psram_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
             if (!s_workers[i].psram) {
+                ESP_LOGE(TAG, "core%u PSRAM buffer allocation failed: %u bytes",
+                         (unsigned)i, (unsigned)psram_size);
                 free_worker_buffers();
                 return ESP_ERR_NO_MEM;
             }

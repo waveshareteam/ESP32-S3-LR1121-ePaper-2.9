@@ -27,6 +27,8 @@ void board_epaper_unlock(void);
 esp_err_t board_epaper_show_lines(const char *title, const char *const *lines,
                                   size_t line_count, bool force_full_refresh);
 esp_err_t board_epaper_sleep(void);
+/* Static native four-gray photo; requires a matching Waveshare 2.9inch V2 panel. */
+esp_err_t board_epaper_show_gray4_v2(const uint8_t *pixels, size_t size);
 
 #ifdef __cplusplus
 }

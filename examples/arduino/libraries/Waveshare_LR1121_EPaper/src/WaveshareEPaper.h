@@ -25,7 +25,7 @@ class Epaper {
   bool refresh(RefreshMode requested = RefreshMode::Fast);
   bool showLines(const char *title, const char *const *lines, size_t count,
                  bool forceFull = false);
-  bool sleep();
+  bool sleep(bool powerOff = true);
   const char *lastError() const { return lastError_; }
 
  private:
@@ -44,6 +44,8 @@ class Epaper {
   bool initializeController();
   void setRamWindow();
   void writeRam();
+  void drawLabel(int16_t x, int16_t y, int16_t maxWidth,
+                 const char *text, bool black = true);
   void drawChar(int16_t x, int16_t y, char value, uint8_t scale, bool black);
 };
 

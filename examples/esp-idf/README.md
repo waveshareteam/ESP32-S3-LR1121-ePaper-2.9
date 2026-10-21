@@ -1,9 +1,8 @@
 # ESP32-S3 LR1121 e-Paper 2.9 ESP-IDF examples
 
-These numbered examples share one board definition. Examples 02 through 09 and
-10 through 12 use Espressif's `esp_board_manager` instead of the former local
-BSP resource layer; example 01 drives the onboard WS2812 directly with
-`led_strip`.
+These numbered examples share one board definition and use Espressif's
+`esp_board_manager`. Example 01 acquires the onboard WS2812 through Board Manager
+and uses its native `led_strip` handle for color updates.
 
 | Directory | Function |
 | --- | --- |
@@ -23,30 +22,50 @@ BSP resource layer; example 01 drives the onboard WS2812 directly with
 
 ## Board Manager integration
 
-Examples 02 through 09 and 10 through 12 pin `espressif/esp_board_manager` 0.6.1
-and model the onboard status LED as its native `led_strip`/RMT device. Example
-1 drives the same WS2812 directly with Espressif's `led_strip` 3.0.3. Every
-Board Manager-backed example declares ESP-IDF `>=5.4.3`.
-Upstream Board Manager 0.6.1 examples document IDF 5.4 `>=5.4.3` and IDF 5.5
-`>=5.5.2`. The component also carries SoC capability data through IDF 6.2, but
-the exact selected IDF branch still needs build validation. The shared board
-files are under
-`components/waveshare_esp_boards/esp32_s3_lr1121_epaper_2_9`, following the same direct-child layout as `espressif/esp_boards`.
-The board package deliberately ends in `_boards`: Board Manager 0.6.1 uses
-that suffix to discover local board dependencies declared outside an
-example's own `components` directory. The selectable board name remains
-`esp32_s3_lr1121_epaper_2_9`.
+Examples 01 through 12 depend on the registry package
+`waveshare/waveshare_boards`, which brings in `espressif/esp_board_manager`
+transitively. Local component manifests intentionally do not declare Board Manager
+directly. With `esp-bmgr-assist` installed in the active ESP-IDF Python environment,
+a fresh example can download dependencies and list boards with one command:
 
-The registry currently also provides 0.7.0, which the referenced ESP32-S31
-project resolves. Its release change is the unrelated audio-codec migration to
-`esp_codec_dev` 2.0.0-beta1. This board has no audio device, and the migration
-uses only APIs present in both versions, so the 0.6.1 pin is intentional.
+```sh
+idf.py bmgr -l
+```
+
+No prior `idf.py reconfigure` or generated board code is needed for this listing.
+A direct Board Manager manifest dependency would select the helper's minimal
+bootstrap and omit unrelated packages such as the Waveshare board package.
+CMake `REQUIRES esp_board_manager` entries remain necessary for compilation.
+When Board Manager is already downloaded but the Waveshare package is absent,
+the helper reuses Board Manager; use `idf.py reconfigure` to complete that partial
+download. Without the helper, use the regular ESP-IDF component download and
+extension-loading workflow.
+
+The registry package 0.1.2 requires Board Manager `>=0.7.2`; dependency resolution
+currently selects Board Manager 0.7.4. Its five board definitions do not include
+`esp32_s3_lr1121_epaper_2_9`. Example 01 and examples 03 through 12 also declare
+the local `waveshare_esp_boards` dependency, so `bmgr -l` discovers the shared
+board YAML under `components/waveshare_esp_boards/esp32_s3_lr1121_epaper_2_9`.
+For example 02, add `-c ../components/waveshare_esp_boards` to list that local board.
+
+Most examples declare ESP-IDF `>=5.4.3`; example 08 retains its own
+`>=6.2.0,<6.3.0` constraint.
+Use an ESP-IDF version compatible with the selected example before listing or
+building it, since the initial bootstrap resolves the full dependency graph.
+
+Validation: examples 03 through 12 all downloaded and listed boards in fresh
+project copies with no `managed_components`, lock file, sdkconfig, build directory,
+or generated board component. After restoring or generating board code, all ten
+examples built successfully: 03–07 and 09–12 with ESP-IDF 5.5.5, and 08 with its
+ESP-IDF 6.2 development checkout (`08e0d30a`). All resolved Board Manager 0.7.4
+and Waveshare boards 0.1.2. Example 01 also passed first-run board listing and
+a complete build with ESP-IDF 5.5.5 after its Board Manager migration. Hardware
+operation was not tested.
 
 Board Manager owns the I2C and shared SPI buses, the BOOT GPIO, e-paper power
 control, and the WS2812 RMT device. The AXP2602, PCF85063A, e-paper, and LR1121
 remain custom devices because Board Manager provides resource and lifecycle
-management, not those chip protocols. Each Board Manager-backed example
-carries its own `components/esp32_s3_lr1121_epaper_2_9_support` copy; keep
+management, not those chip protocols. Examples 02 through 12 each carry their own `components/esp32_s3_lr1121_epaper_2_9_support` copy; keep
 common changes in sync while preserving example-specific extensions. The shared
 `components/waveshare_esp_boards` component contains only board definitions and
 can be maintained or published independently.
@@ -87,29 +106,22 @@ controller and framebuffer state.
 The `01_ws2812_led` directory tests the single onboard WS2812 on GPIO21. See
 `01_ws2812_led/README.md` for the test sequence, brightness limit, hardware-evidence boundary, and flash command.
 
-Examples 02 through 09 and 10 through 12 intentionally track their own
-`components/gen_bmgr_codes` output, so a normal checkout can be configured
-and built without regenerating the board files first:
-
-```text
-idf.py -C 04_bat_axp2602 set-target esp32s3
-idf.py -C 04_bat_axp2602 reconfigure
-idf.py -C 04_bat_axp2602 build
-```
-
-Replace `04_bat_axp2602` with the example to build.
+Building requires `components/gen_bmgr_codes`. Listing boards does not generate
+that component. If it is missing, select the board as described below before
+running `idf.py build`. For ordinary clean rebuilds, retain the generated sources
+and run `idf.py fullclean` followed by `idf.py build`.
 
 ## Regenerating board code
 
-Only regenerate after changing one of the shared board YAML files. Run this
-from every affected example directory:
+Generate when board code is missing, or regenerate after changing a shared board
+YAML file. Run this from every affected example directory:
 
 ```text
 idf.py bmgr -l
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../components/waveshare_esp_boards
 ```
 
-The 0.6.1 generator writes environment-specific output. Before committing a
+The generator writes environment-specific output. Before committing a
 regeneration, verify all of the following:
 
 - `components/gen_bmgr_codes/.gitignore` keeps the generated sources tracked
@@ -133,7 +145,6 @@ configuration also cannot establish the fitted AXP2602 sense resistor, CSP/CSN
 direction, e-paper power polarity, panel waveform, or LR1121 sleep-pin
 behavior. Check these against the board schematic. The AXP2602 component search
 and register-level limitations are documented in `04_bat_axp2602/README.md`.
-
 
 
 

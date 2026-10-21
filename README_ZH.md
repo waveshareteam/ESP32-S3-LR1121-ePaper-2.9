@@ -19,6 +19,9 @@
 
 ## 快速入口
 
+- 中文 Wiki：[`docs/wiki.zh-CN.md`](docs/wiki.zh-CN.md)
+- 硬件事实清单：[`docs/hardware-facts.zh-CN.md`](docs/hardware-facts.zh-CN.md)
+- 官网详情页预览：[`web/product-detail/`](web/product-detail/)
 - ESP-IDF 项目：[`examples/esp-idf/`](examples/esp-idf/)
 - Arduino 示例和随仓库库文件：[`examples/arduino/`](examples/arduino/)
 - 硬件资料：[`hardware/`](hardware/)
@@ -27,6 +30,10 @@
 
 每个编号目录都是独立示例。构建或烧录前，请先阅读对应框架和示例目录
 中的 README。
+
+当前 Wiki 和详情页按“已确认 / 实现参考 / 用户提供待复测 / 待确认”管理
+规格。用户提供的“低于 12 µA”仅作为特定条件下的阶段性目标或实测信息，
+在补齐固件、供电、测量点、仪表和环境条件前不作为无条件产品保证。
 
 ## 示例
 

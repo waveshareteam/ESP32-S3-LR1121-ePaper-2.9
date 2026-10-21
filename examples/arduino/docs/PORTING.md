@@ -9,7 +9,7 @@
 | `05_rtc_pcf85063` | `05_rtc_pcf85063` | Address `0x51`, invalid-time fallback, date/time page | Polls once per second instead of using the RTC 1 Hz IRQ task |
 | `06_lr1121_pingpong` | `06_lr1121_pingpong` | 868 MHz, BW125, SF7, CR5, 22 dBm, PING/PONG, RSSI/SNR page | Uses bounded blocking receive instead of the IDF event task |
 | `07_deep_sleep` | `07_deep_sleep` | Timer/GPIO0 wake, radio sleep, PMU sleep, display sleep, power off | Does not reproduce every IDF RTC GPIO isolation/hold operation; confirm sleep current on hardware |
-| `08_comprehensive_demo` | `08_comprehensive_demo` | Shared board init, LED, I2C, battery, RTC, display, radio, buttons, Preferences | The IDF BLE/Wi-Fi/stress task orchestration is not ported; Arduino sketch is a board-health dashboard |
+| `08_comprehensive_demo` | `08_comprehensive_demo` | Self-test/result/runtime pages, APSTA, passive BLE scan, dual-core stress, GPIO1 LoRa TX/continuous RX, GPIO0 double-click sleep/EXT1 wake, ordered shutdown | Arduino APIs and FreeRTOS replace Board Manager; mbedTLS replaces PSA; self-test is sequential; see the sketch README for validation limits |
 | `09_lr1121_lorawan` | `09_lr1121_lorawan` | EU868 OTAA Class A, credential gate, nonce/session persistence, counter-safe uplinks | UI/task scheduling is simplified to Arduino `loop()` |
 | `10_LoRaWAN_ABP` | `10_LoRaWAN_ABP` | EU868 ABP, four LoRaWAN 1.1 session keys, GPIO1/manual or timed uplink, post-transaction FCnt persistence | The IDF pre-transmission FCntUp reservation and pending-transaction ambiguity lockout are not ported |
 | `11_LoRaWAN_Class_C` | `11_LoRaWAN_Class_C` | OTAA restore, Class C switch, confirmed marker, continuous downlink polling | Recovery policy is simpler than the IDF state machine |
@@ -35,11 +35,11 @@ partial-window updates. The Arduino driver exposes the controller's PARTIAL
 waveform but examples preserve the FULL/FAST policy: first FULL, at most ten
 FAST updates, then FULL again.
 
-The repository does not contain a board schematic or the two panel datasheets.
-The exact controller marking, panel-revision timing limits, and hardware pin
-correctness therefore remain TODOs for authoritative-document or hardware
-validation. The controller-family, geometry, polarity, and timing statements
-above are source-derived contracts, not schematic or panel qualification.
+The board schematic is in `hardware/schematics/`. The 08 SDMMC pins and switched
+power shutdown follow that schematic and the ESP-IDF 08 implementation. Panel
+markings, revision-specific timing and waveforms still require hardware validation.
+The controller-family and geometry statements above are source-derived contracts,
+not panel qualification.
 
 ## LR1121 evidence conflict
 
@@ -66,6 +66,9 @@ must be proven unable to reuse a counter.
 
 ## Validation boundary
 
-No Arduino or ESP-IDF compile, configure, link, upload, serial session, or
-hardware test was run for this delivery. Only static checks were performed.
+Arduino sketches are compile-checked with Arduino-ESP32 3.3.11 and RadioLib 7.7.1.
+`tools/test_ui.py` exercises the actual renderer for both panel sizes under host
+address/undefined-behavior sanitizers, plus button debounce and double-click logic.
+No upload or hardware test is implied. Confirm wireless coexistence, panel refresh,
+SD card compatibility and low-power current on the board.
 

@@ -58,8 +58,18 @@ Open the `.ino` whose name matches its directory, for example
 Arduino IDE's normal Verify and Upload buttons. Open Serial Monitor at
 **115200 baud** after upload.
 
-This repository delivery was intentionally not compiled or uploaded. Your
-first local Verify is therefore the first compile validation.
+The examples are compile-checked with the board package and settings above.
+Compilation and host UI tests do not replace hardware validation: verify panel
+refreshes, radio reception, button behavior and sleep current on your board.
+
+All screen examples use the same crisp Terminus Bold 8x14 ASCII font as the
+ESP-IDF examples (previously 5x7). Status rows share the available height;
+long text ends in `...` instead of overflowing into the next cell. Example 08
+uses the ESP-IDF two-column runtime layout and full-width radio counters.
+Examples 01 and 02 remain LED-only and serial-only respectively.
+
+See [08 comprehensive test](08_comprehensive_demo/README.md) for Wi-Fi settings,
+GPIO1 transmit, GPIO0 double-click sleep and single-click wake.
 
 ## 5. LoRaWAN credentials
 
@@ -102,9 +112,10 @@ HP selects the LR1121 PA path; it does not grant permission to transmit at
 selected LoRaWAN region. Confirm local regulations, antenna gain, and the board
 power supply before transmission.
 
-The e-paper and LR1121 share SPI. The examples complete a radio transaction
-before refreshing the display. Do not add display or Preferences work inside
-RadioLib RX windows.
+The e-paper and LR1121 share SPI. Example 08 uses separate tasks with the
+Arduino core SPI transaction lock; other radio examples complete their radio
+operation before refreshing the display. Do not add display or Preferences work
+inside LoRaWAN RX windows.
 
 ## 7. Expected serial output
 
@@ -117,7 +128,7 @@ RadioLib RX windows.
 | 05 | date/time and `voltage_low` state |
 | 06 | `LR1121 init: 0`, followed by PING/PONG traffic |
 | 07 | wake cause, radio state, then `start deep sleep` |
-| 08 | battery/RTC/radio/storage summary |
+| 08 | self-test results, APSTA/BLE status, CPU stress and LoRa counters |
 | 09 | OTAA state and increasing `FCntUp` |
 | 10 | ABP state and increasing `FCntUp` |
 | 11 | Class C ready and asynchronous downlink reports |

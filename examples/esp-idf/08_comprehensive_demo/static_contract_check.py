@@ -253,7 +253,7 @@ for token in (
     "slot.width = 1",
 ):
     require("main/test_storage.c", token, "read-only SD contract")
-driver_path = "../components/esp_epaper/src/controllers/ssd16xx.c"
+driver_path = "components/esp_epaper/src/controllers/ssd16xx.c"
 driver_text = read(driver_path)
 fast_match = re.search(
     r"static esp_err_t ssd16xx_update_fast\(.*?\n}\n",
@@ -320,7 +320,7 @@ forbid(
     "LVGL flush must honor the selected full/fast update mode",
 )
 require(
-    "../components/epaper_ui_font/CMakeLists.txt",
+    "components/epaper_ui_font/CMakeLists.txt",
     '"src/lv_font_terminus_14_bold.c"',
     "Terminus font source registration",
 )
@@ -332,17 +332,17 @@ for token in (
     ".line_height = 14",
 ):
     require(
-        "../components/epaper_ui_font/src/lv_font_terminus_14_bold.c",
+        "components/epaper_ui_font/src/lv_font_terminus_14_bold.c",
         token,
         "e-paper bitmap font contract",
     )
 require(
-    "../components/epaper_ui_font/OFL.txt",
+    "components/epaper_ui_font/OFL.txt",
     "SIL OPEN FONT LICENSE Version 1.1",
     "Terminus font license",
 )
 require(
-    "../components/epaper_ui_font/README.md",
+    "components/epaper_ui_font/README.md",
     "ter-u14b.bdf",
     "Terminus font source provenance",
 )

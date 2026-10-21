@@ -1,4 +1,6 @@
 dependencies:
   idf: '>=5.4.3'
+  waveshare/waveshare_boards:
+    version: '*'
   espressif/led_strip:
     version: '3.0.3'

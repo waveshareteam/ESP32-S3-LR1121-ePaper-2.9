@@ -10,3 +10,10 @@ window and cursor before the next fast update.
 
 Only files required to build the component are kept here; upstream examples,
 images, and package checksum metadata are intentionally omitted.
+
+Example 03 additionally contains an explicit Waveshare 2.9inch V2 Gray4 photo
+adapter in `src/controllers/ssd1680_290_gray4.c`. It preserves the upstream
+Waveshare permission notice and does not change the generic SSD16xx registry
+or B/W framebuffer. This panel-specific adapter must not be treated as
+automatic four-gray support for all 128x296 panels. See the example README
+for source provenance, selection and hardware-validation limitations.

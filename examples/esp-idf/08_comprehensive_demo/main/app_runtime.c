@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "app_config.h"
 #include "board_epaper.h"
@@ -11,6 +12,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -22,6 +24,18 @@ static QueueHandle_t s_events;
 static TaskHandle_t s_task;
 static app_runtime_state_t s_state;
 static bool s_nvs_initialized;
+static uint32_t s_displayed_rx_count;
+static TickType_t s_last_epaper_attempt;
+static bool s_self_test_running;
+static app_test_result_t s_self_test_results[8];
+static bool s_boot_wakeup_pending;
+
+static bool rx_refresh_due(TickType_t now, uint32_t rx_count)
+{
+    return rx_count != s_displayed_rx_count &&
+           (TickType_t)(now - s_last_epaper_attempt) >=
+               pdMS_TO_TICKS(TEST_EPAPER_RX_MIN_INTERVAL_MS);
+}
 
 static const char *state_name(app_runtime_state_t state)
 {
@@ -82,8 +96,8 @@ static esp_err_t nvs_prepare(void)
 
 static esp_err_t run_self_test(void)
 {
-    app_test_result_t results[8] = {0};
-    esp_err_t first_error = ESP_OK;
+    app_test_result_t *results = s_self_test_results;
+    esp_err_t first_error = results[4].status == APP_TEST_FAIL ? ESP_FAIL : ESP_OK;
     esp_err_t ret;
 
     ret = test_system_run(&results[0]);
@@ -94,8 +108,6 @@ static esp_err_t run_self_test(void)
     if (ret != ESP_OK && first_error == ESP_OK) first_error = ret;
     ret = test_battery_run(&results[3]);
     if (ret != ESP_OK && first_error == ESP_OK) first_error = ret;
-    ret = test_led_run(&results[4]);
-    if (ret != ESP_OK && first_error == ESP_OK) first_error = ret;
     ret = test_epaper_run(&results[5]);
     if (ret != ESP_OK && first_error == ESP_OK) first_error = ret;
     ret = test_storage_run(&results[6]);
@@ -103,10 +115,31 @@ static esp_err_t run_self_test(void)
     ret = test_radio_run(&results[7]);
     if (ret != ESP_OK && first_error == ESP_OK) first_error = ret;
 
-    ret = app_ui_show_summary(results, 8, true);
+    return first_error;
+}
+
+static void self_test_task(void *arg)
+{
+    (void)arg;
+    const app_runtime_event_t event = {
+        .type = APP_EVENT_SELF_TEST_DONE,
+        .result = run_self_test(),
+    };
+    /* Publish only after all result writes and peripheral operations finish. */
+    (void)xQueueSend(s_events, &event, portMAX_DELAY);
+    vTaskDelete(NULL);
+}
+
+static void show_self_test_summary(esp_err_t first_error)
+{
+    const app_test_result_t *results = s_self_test_results;
+    const esp_err_t ret = app_ui_show_summary(results, 8, true);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "e-paper self-test summary unavailable: %s",
                  esp_err_to_name(ret));
+    } else {
+        /* Start the reading interval after the full panel refresh completes. */
+        vTaskDelay(pdMS_TO_TICKS(TEST_EPAPER_SUMMARY_HOLD_MS));
     }
     for (size_t i = 0; i < 8; ++i) {
         const char *status =
@@ -121,7 +154,6 @@ static esp_err_t run_self_test(void)
     }
     ESP_LOGI(TAG, "self-test complete: %s",
              first_error == ESP_OK ? "PASS/NOT_TESTED" : "FAIL");
-    return first_error;
 }
 
 static esp_err_t start_active_services(void)
@@ -182,9 +214,13 @@ static void report_runtime(bool refresh_epaper)
             state_name(s_state), radio.tx_count, radio.tx_fail_count,
             radio.rx_count, ap_clients, sta_connected, ble_started,
             ble_scans);
+        s_last_epaper_attempt = xTaskGetTickCount();
         if (ret != ESP_OK) {
             ESP_LOGW(TAG, "runtime e-paper refresh failed: %s",
                      esp_err_to_name(ret));
+        } else {
+            /* Only acknowledge rendered packets; arrivals mid-refresh stay pending. */
+            s_displayed_rx_count = radio.rx_count;
         }
     }
 }
@@ -228,10 +264,15 @@ static void wake_reinit(void)
 {
     const uint32_t causes = esp_sleep_get_wakeup_causes();
     const uint64_t ext1_status = esp_sleep_get_ext1_wakeup_status();
-    ESP_LOGI(TAG,
-             "WAKE_REINIT causes=0x%08" PRIX32 " ext1_gpio_mask=0x%016"
-             PRIX64,
-             causes, ext1_status);
+    if (s_boot_wakeup_pending) {
+        ESP_LOGI(TAG,
+                 "DEEP_SLEEP_WAKE WAKE_REINIT causes=0x%08" PRIX32
+                 " ext1_gpio_mask=0x%016" PRIX64,
+                 causes, ext1_status);
+        s_boot_wakeup_pending = false;
+    } else {
+        ESP_LOGW(TAG, "SLEEP_CANCELLED: recovering active services without a deep-sleep wakeup");
+    }
     test_sleep_abort();
     cleanup_partial_active_state();
     wait_for_gpio0_release();
@@ -301,10 +342,14 @@ static void runtime_task(void *arg)
 {
     (void)arg;
     const uint32_t wake_causes = esp_sleep_get_wakeup_causes();
-    const bool woke_from_sleep =
-        wake_causes != 0 &&
-        (wake_causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) == 0;
-    set_state(woke_from_sleep ? WAKE_REINIT : ACTIVE_SELF_TEST);
+    const esp_reset_reason_t reset_reason = esp_reset_reason();
+    s_boot_wakeup_pending = reset_reason == ESP_RST_DEEPSLEEP;
+    ESP_LOGI(TAG, "boot reset=%d wake_bitmap=0x%08" PRIX32,
+             (int)reset_reason, wake_causes);
+    if (reset_reason == ESP_RST_USB) {
+        ESP_LOGW(TAG, "USB_RESET: reset by USB peripheral, not GPIO0 deep-sleep wakeup");
+    }
+    set_state(s_boot_wakeup_pending ? WAKE_REINIT : ACTIVE_SELF_TEST);
     TickType_t next_uart = 0;
     TickType_t next_epaper = 0;
 
@@ -313,26 +358,62 @@ static void runtime_task(void *arg)
             wake_reinit();
             set_state(ACTIVE_SELF_TEST);
         } else if (s_state == ACTIVE_SELF_TEST) {
-            const esp_err_t nvs_ret = nvs_prepare();
-            if (nvs_ret != ESP_OK) {
-                ESP_LOGE(TAG, "NVS init failed; Wi-Fi/BLE may be unavailable: %s",
-                         esp_err_to_name(nvs_ret));
+            if (!s_self_test_running) {
+                memset(s_self_test_results, 0, sizeof(s_self_test_results));
+                esp_err_t ret = board_support_prepare();
+                if (ret == ESP_OK) {
+                    ret = board_epaper_power_set(true);
+                }
+                if (ret == ESP_OK) {
+                    /* The LED shares the peripheral rail; power it before UI init. */
+                    (void)test_led_run(&s_self_test_results[4]);
+                } else {
+                    ESP_LOGE(TAG, "startup peripheral power failed: %s",
+                             esp_err_to_name(ret));
+                    app_result_set(&s_self_test_results[4], "LED", APP_TEST_FAIL,
+                                   "Power/init failed", esp_err_to_name(ret));
+                }
+
+                const esp_err_t ui_ret = app_ui_init();
+                if (ui_ret != ESP_OK) {
+                    ESP_LOGW(TAG, "e-paper init failed; UART remains available: %s",
+                             esp_err_to_name(ui_ret));
+                }
+                const esp_err_t nvs_ret = nvs_prepare();
+                if (nvs_ret != ESP_OK) {
+                    ESP_LOGE(TAG, "NVS init failed; Wi-Fi/BLE may be unavailable: %s",
+                             esp_err_to_name(nvs_ret));
+                }
+
+                /* UI is initialized before the worker can inspect the panel. */
+                s_self_test_running = xTaskCreate(
+                    self_test_task, "startup_self_test", 12288,
+                    NULL, 4, NULL) == pdPASS;
+                if (ui_ret == ESP_OK) {
+                    ret = app_ui_show_message("SELF TEST", "Testing hardware...",
+                                              "Please wait for results", true);
+                    if (ret != ESP_OK) {
+                        ESP_LOGW(TAG, "startup page failed: %s", esp_err_to_name(ret));
+                    }
+                }
+                if (!s_self_test_running) {
+                    ESP_LOGW(TAG, "self-test task allocation failed; running synchronously");
+                    show_self_test_summary(run_self_test());
+                    (void)start_active_services();
+                    set_state(ACTIVE_STRESS);
+                    continue;
+                }
             }
-            const esp_err_t board_ret = board_support_prepare();
-            if (board_ret != ESP_OK) {
-                ESP_LOGE(TAG, "board support prepare failed: %s",
-                         esp_err_to_name(board_ret));
+
+            /* Buttons/radios/stress start only after the worker releases the hardware. */
+            app_runtime_event_t event = {0};
+            if (xQueueReceive(s_events, &event, pdMS_TO_TICKS(100)) == pdTRUE &&
+                event.type == APP_EVENT_SELF_TEST_DONE) {
+                s_self_test_running = false;
+                show_self_test_summary(event.result);
+                (void)start_active_services();
+                set_state(ACTIVE_STRESS);
             }
-            const esp_err_t ui_ret = app_ui_init();
-            if (ui_ret != ESP_OK) {
-                ESP_LOGW(TAG, "e-paper init failed; UART remains available: %s",
-                         esp_err_to_name(ui_ret));
-            }
-            (void)run_self_test();
-            (void)start_active_services();
-            set_state(ACTIVE_STRESS);
-            next_uart = xTaskGetTickCount();
-            next_epaper = xTaskGetTickCount();
         } else if (s_state == ACTIVE_STRESS) {
             report_runtime(true);
             set_state(LORA_RX);
@@ -382,16 +463,21 @@ static void runtime_task(void *arg)
                 next_uart = now +
                             pdMS_TO_TICKS(TEST_UART_STATUS_PERIOD_MS);
             }
-            if ((int32_t)(now - next_epaper) >= 0) {
+            /* Poll the shared snapshot: RX bursts must not fill the button/TX queue. */
+            board_radio_status_t radio = {0};
+            (void)app_radio_service_get_status(&radio);
+            if (s_state == LORA_RX &&
+                ((int32_t)(now - next_epaper) >= 0 ||
+                 rx_refresh_due(now, radio.rx_count))) {
                 report_runtime(true);
-                next_epaper = now +
+                next_epaper = xTaskGetTickCount() +
                               pdMS_TO_TICKS(TEST_EPAPER_STATUS_PERIOD_MS);
             }
         } else if (s_state == PREPARE_SLEEP) {
             if (prepare_sleep()) {
                 set_state(LOW_POWER);
                 const esp_err_t ret = test_sleep_enter_low_power();
-                ESP_LOGE(TAG, "deep sleep returned unexpectedly: %s",
+                ESP_LOGE(TAG, "deep-sleep entry cancelled/returned: %s",
                          esp_err_to_name(ret));
                 set_state(WAKE_REINIT);
             } else {

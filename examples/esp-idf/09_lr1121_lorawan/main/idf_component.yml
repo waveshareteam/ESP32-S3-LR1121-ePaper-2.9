@@ -1,8 +1,7 @@
 dependencies:
   idf: ">=5.4.3"
-  espressif/esp_board_manager:
-    version: "0.6.1"
+  waveshare/waveshare_boards:
+    version: "*"
   jgromes/radiolib:
     version: "7.7.1"
-  waveshare_esp_boards:
-    path: ../../components/waveshare_esp_boards
+  
