@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS "src/board_support.c"
-         "src/axp2602.c"
          "src/board_epaper.c"
          "src/board_radio.cpp"
     INCLUDE_DIRS "include"

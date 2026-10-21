@@ -1,7 +1,0 @@
-dependencies:
-  idf: ">=5.4.3"
-  waveshare/waveshare_boards:
-    version: "*"
-  jgromes/radiolib:
-    version: "7.7.1"
-  

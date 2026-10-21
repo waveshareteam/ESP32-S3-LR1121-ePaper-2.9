@@ -133,7 +133,7 @@ def main():
         exe = work/'test'
         subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-fsanitize=address,undefined',
                         '-fno-omit-frame-pointer','-g',f'-I{work}',f'-I{LIB}',
-                        f'-I{ROOT / "08_comprehensive_demo"}',str(work/'test.cpp'),
+                        f'-I{ROOT / "09_comprehensive_demo"}',str(work/'test.cpp'),
                         str(LIB/'WaveshareEPaper.cpp'),'-o',str(exe)], check=True)
         command = [str(exe)]
         if args.preview_dir:

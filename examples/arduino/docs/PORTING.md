@@ -8,12 +8,13 @@
 | `04_bat_axp2602` | `04_bat_axp2602` | AXP2602 ID, measurement enable, 350 ms SOC settle, main readings | IRQ enable/clear flow is not demonstrated |
 | `05_rtc_pcf85063` | `05_rtc_pcf85063` | Address `0x51`, invalid-time fallback, date/time page | Polls once per second instead of using the RTC 1 Hz IRQ task |
 | `06_lr1121_pingpong` | `06_lr1121_pingpong` | 868 MHz, BW125, SF7, CR5, 22 dBm, PING/PONG, RSSI/SNR page | Uses bounded blocking receive instead of the IDF event task |
-| `07_deep_sleep` | `07_deep_sleep` | Timer/GPIO0 wake, radio sleep, PMU sleep, display sleep, power off | Does not reproduce every IDF RTC GPIO isolation/hold operation; confirm sleep current on hardware |
-| `08_comprehensive_demo` | `08_comprehensive_demo` | Self-test/result/runtime pages, APSTA, passive BLE scan, dual-core stress, GPIO1 LoRa TX/continuous RX, GPIO0 double-click sleep/EXT1 wake, ordered shutdown | Arduino APIs and FreeRTOS replace Board Manager; mbedTLS replaces PSA; self-test is sequential; see the sketch README for validation limits |
-| `09_lr1121_lorawan` | `09_lr1121_lorawan` | EU868 OTAA Class A, credential gate, nonce/session persistence, counter-safe uplinks | UI/task scheduling is simplified to Arduino `loop()` |
-| `10_LoRaWAN_ABP` | `10_LoRaWAN_ABP` | EU868 ABP, four LoRaWAN 1.1 session keys, GPIO1/manual or timed uplink, post-transaction FCnt persistence | The IDF pre-transmission FCntUp reservation and pending-transaction ambiguity lockout are not ported |
-| `11_LoRaWAN_Class_C` | `11_LoRaWAN_Class_C` | OTAA restore, Class C switch, confirmed marker, continuous downlink polling | Recovery policy is simpler than the IDF state machine |
-| `12_LoRaWAN_Multicast` | `12_LoRaWAN_Multicast` | OTAA unicast session, Class C multicast, replay counter persisted before payload exposure | Stores only the last multicast FCnt, not the IDF CRC-wrapped multicast schema |
+| `07_sd_card` | `07_sd_card` | 1-bit SDMMC mount, card info, root listing, non-overwriting write/read/cleanup test | Arduino `SD_MMC` replaces the ESP-IDF VFS/FATFS API |
+| `08_deep_sleep` | `08_deep_sleep` | Timer/GPIO0 wake, radio sleep, PMU sleep, display sleep, power off | Does not reproduce every IDF RTC GPIO isolation/hold operation; confirm sleep current on hardware |
+| `09_comprehensive_demo` | `09_comprehensive_demo` | Self-test/result/runtime pages, APSTA, passive BLE scan, dual-core stress, GPIO1 LoRa TX/continuous RX, GPIO0 double-click sleep/EXT1 wake, ordered shutdown | Arduino APIs and FreeRTOS replace Board Manager; mbedTLS replaces PSA; self-test is sequential; see the sketch README for validation limits |
+| `10_lr1121_lorawan` | `10_lr1121_lorawan` | EU868 OTAA Class A, credential gate, nonce/session persistence, counter-safe uplinks | UI/task scheduling is simplified to Arduino `loop()` |
+| `11_LoRaWAN_ABP` | `11_LoRaWAN_ABP` | EU868 ABP, four LoRaWAN 1.1 session keys, GPIO1/manual or timed uplink, post-transaction FCnt persistence | The IDF pre-transmission FCntUp reservation and pending-transaction ambiguity lockout are not ported |
+| `12_LoRaWAN_Class_C` | `12_LoRaWAN_Class_C` | OTAA restore, Class C switch, confirmed marker, continuous downlink polling | Recovery policy is simpler than the IDF state machine |
+| `13_LoRaWAN_Multicast` | `13_LoRaWAN_Multicast` | OTAA unicast session, Class C multicast, replay counter persisted before payload exposure | Stores only the last multicast FCnt, not the IDF CRC-wrapped multicast schema |
 
 ## Display evidence
 
@@ -35,16 +36,16 @@ partial-window updates. The Arduino driver exposes the controller's PARTIAL
 waveform but examples preserve the FULL/FAST policy: first FULL, at most ten
 FAST updates, then FULL again.
 
-The board schematic is in `hardware/schematics/`. The 08 SDMMC pins and switched
-power shutdown follow that schematic and the ESP-IDF 08 implementation. Panel
+The board schematic is in `hardware/schematics/`. The 09 SDMMC pins and switched
+power shutdown follow that schematic and the ESP-IDF 09 implementation. Panel
 markings, revision-specific timing and waveforms still require hardware validation.
 The controller-family and geometry statements above are source-derived contracts,
 not panel qualification.
 
 ## LR1121 evidence conflict
 
-Current executable sources for examples 06 and 09-12 pass **3.0 V** to
-RadioLib for the LR1121 TCXO. Older prose in the 11/12 READMEs says 1.6 V, but
+Current executable sources for examples 06 and 10-13 pass **3.0 V** to
+RadioLib for the LR1121 TCXO. Older prose in the 12/13 READMEs says 1.6 V, but
 the same examples' current `board_lorawan_radio.cpp` constants and calls use
 3.0 V. The Arduino adapter follows executable source and uses 3.0 V. Confirm
 the board revision and measured TCXO rail during hardware validation.

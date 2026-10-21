@@ -1,4 +1,0 @@
-dependencies:
-  idf: ">=6.2.0,<6.3.0"
-  waveshare/waveshare_boards:
-    version: "*"

@@ -16,8 +16,8 @@ examples. It supports the Waveshare ESP32-S3 LR1121 e-paper 2.13-inch and
    sketchbook `libraries` directory, then restart Arduino IDE.
 
 The bundled library declares only RadioLib as an external dependency. Arduino
-core libraries such as SPI, Wire, Preferences, and WiFi come with the board
-package.
+core libraries such as SPI, Wire, Preferences, WiFi, and SD_MMC come with the
+board package.
 
 ## 2. Select the display
 
@@ -64,16 +64,16 @@ refreshes, radio reception, button behavior and sleep current on your board.
 
 All screen examples use the same crisp Terminus Bold 8x14 ASCII font as the
 ESP-IDF examples (previously 5x7). Status rows share the available height;
-long text ends in `...` instead of overflowing into the next cell. Example 08
+long text ends in `...` instead of overflowing into the next cell. Example 09
 uses the ESP-IDF two-column runtime layout and full-width radio counters.
 Examples 01 and 02 remain LED-only and serial-only respectively.
 
-See [08 comprehensive test](08_comprehensive_demo/README.md) for Wi-Fi settings,
+See [09 comprehensive test](09_comprehensive_demo/README.md) for Wi-Fi settings,
 GPIO1 transmit, GPIO0 double-click sleep and single-click wake.
 
 ## 5. LoRaWAN credentials
 
-Examples 09 through 12 contain conspicuous all-zero placeholders in a local
+Examples 10 through 13 contain conspicuous all-zero placeholders in a local
 credentials header. Replace every required EUI, address, and key before use.
 If any placeholder remains, the sketch prints `PROVISIONING ERROR`, displays
 `CONFIG ERROR`, and stops before radio activation or network traffic. Keys are
@@ -94,6 +94,7 @@ provides them through CFList or MAC commands.
 | PCF85063A | `0x51`, IRQ GPIO7 |
 | AXP2602 | `0x62`, charge GPIO47, IRQ GPIO48 |
 | Shared SPI | SCK GPIO40, MOSI GPIO45, MISO GPIO46 |
+| microSD (SDMMC 1-bit) | CMD GPIO10, D0 GPIO11, CLK GPIO12 |
 | E-paper | BUSY GPIO8, RST GPIO9, DC GPIO17, CS GPIO18 |
 | LR1121 | DIO1 GPIO6, NSS GPIO42, RST GPIO39, BUSY GPIO41 |
 | Buttons | BOOT GPIO0, radio-send GPIO1 |
@@ -112,7 +113,7 @@ HP selects the LR1121 PA path; it does not grant permission to transmit at
 selected LoRaWAN region. Confirm local regulations, antenna gain, and the board
 power supply before transmission.
 
-The e-paper and LR1121 share SPI. Example 08 uses separate tasks with the
+The e-paper and LR1121 share SPI. Example 09 uses separate tasks with the
 Arduino core SPI transaction lock; other radio examples complete their radio
 operation before refreshing the display. Do not add display or Preferences work
 inside LoRaWAN RX windows.
@@ -127,12 +128,13 @@ inside LoRaWAN RX windows.
 | 04 | battery voltage, current, SOC, temperature |
 | 05 | date/time and `voltage_low` state |
 | 06 | `LR1121 init: 0`, followed by PING/PONG traffic |
-| 07 | wake cause, radio state, then `start deep sleep` |
-| 08 | self-test results, APSTA/BLE status, CPU stress and LoRa counters |
-| 09 | OTAA state and increasing `FCntUp` |
-| 10 | ABP state and increasing `FCntUp` |
-| 11 | Class C ready and asynchronous downlink reports |
-| 12 | multicast group and committed multicast counter |
+| 07 | card information, readback verification, unmount, `FINAL: PASS` |
+| 08 | wake cause, radio state, then `start deep sleep` |
+| 09 | self-test results, APSTA/BLE status, CPU stress and LoRa counters |
+| 10 | OTAA state and increasing `FCntUp` |
+| 11 | ABP state and increasing `FCntUp` |
+| 12 | Class C ready and asynchronous downlink reports |
+| 13 | multicast group and committed multicast counter |
 
 RadioLib result `0` means success. A negative result after `sendReceive()` does
 not prove that no uplink left the radio; the examples persist the session when
@@ -148,6 +150,9 @@ RadioLib's internal uplink counter advances.
   128 and visible width 122. Do not reduce the framebuffer to 122 x 250 bits.
 - **I2C scan finds nothing**: verify GPIO38 is high, then check GPIO13/14 and
   pull-ups. The expected addresses are `0x51` and `0x62`.
+- **SD mount fails**: insert a FAT16/FAT32 card before reset, then check
+  GPIO38 power and the 1-bit SDMMC pins CMD=10, D0=11, CLK=12. The example
+  never formats the card.
 - **LR1121 chip not found**: check NSS/DIO1/RST/BUSY, SPI pins, 8 MHz SPI, RF
   switch setup, and TCXO 3.0 V.
 - **OTAA never joins**: verify region, JoinEUI/DevEUI byte order, LoRaWAN MAC

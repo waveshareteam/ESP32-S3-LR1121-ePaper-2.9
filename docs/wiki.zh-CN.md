@@ -1,5 +1,7 @@
 # ESP32-S3-LR1121-ePaper-2.9
 
+> 历史资料草稿：部分路径、编号和测试状态已变化。编写使用手册时以 [当前交接说明](manual-handoff.zh-CN.md)、示例 README 和源码为准；本草稿中的旧构建失败记录不代表当前状态。
+
 > 文档状态：预发布草案，基于仓库提交 `e272df5` 整理。硬件事实、冲突项和
 > 待补资料分别见 [硬件事实清单](hardware-facts.zh-CN.md) 与
 > [待补资料清单](pending-materials.zh-CN.md)。
@@ -161,7 +163,7 @@ LR1121 在关断共享电源前先进入睡眠，可避免异常总线状态；�
 
 ### 复测固件
 
-建议以 `examples/esp-idf/07_deep_sleep` 为起点。在当前依赖缺口修复、构建
+建议以 `examples/esp-idf/08_deep_sleep` 为起点。在当前依赖缺口修复、构建
 通过并确认硬件后，固定 Git 提交与 `sdkconfig`，不要在测量期间连接串口监视器
 或让 USB 主机周期唤醒设备。
 
@@ -288,7 +290,7 @@ Arduino 与 ESP-IDF 使用相同编号。除特别说明外，串口波特率为
 
 截至仓库提交 `e272df5`，以下限制仍需修复和重新验证：
 
-1. `08_comprehensive_demo` 声明 ESP-IDF `>=6.2,<6.3`，与计划的 v5.5.5、
+1. `09_comprehensive_demo` 声明 ESP-IDF `>=6.2,<6.3`，与计划的 v5.5.5、
    v6.0.2 CI 矩阵不兼容。
 2. ESP-IDF README 声称 02–12 已提交 `components/gen_bmgr_codes`，但干净检出
    中 02、07–12 缺少该目录，相关 CMake/Board Manager 配置可能无法完成。
