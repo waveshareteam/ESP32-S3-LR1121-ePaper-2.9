@@ -30,4 +30,4 @@ __pycache__/
 /.codex/
 
 # Board Manager regenerates these sources for the selected board.
-/examples/esp-idf/*/components/gen_bmgr_codes/
+gen_bmgr_codes/
