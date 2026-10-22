@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 /*
  * Fill only these macros when a real STA test is required. The SoftAP always
  * starts with the default test network. Do not commit real credentials.
  */
-#define TEST_WIFI_STA_SSID       "JSBPI"
-#define TEST_WIFI_STA_PASSWORD   "waveshare0755"
+#define TEST_WIFI_STA_SSID       ""
+#define TEST_WIFI_STA_PASSWORD   ""
 
 #define TEST_WIFI_AP_SSID       "LR1121-S3-TEST"
 #define TEST_WIFI_AP_PASSWORD   "lr1121test"
@@ -28,7 +28,9 @@
 #define TEST_GPIO0_DOUBLE_CLICK_MS   600
 #define TEST_BUTTON_RELEASE_MS       100
 #define TEST_UART_STATUS_PERIOD_MS   30000
+#define TEST_EPAPER_SUMMARY_HOLD_MS  2000
 #define TEST_EPAPER_STATUS_PERIOD_MS 300000
+#define TEST_EPAPER_RX_MIN_INTERVAL_MS 2000
 
 #define TEST_LORA_CONFIG_INIT() { \
     .frequency_mhz = TEST_LORA_FREQUENCY_MHZ, \

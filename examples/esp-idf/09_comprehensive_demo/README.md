@@ -14,7 +14,7 @@ ESP32-S3 双核 240 MHz、Wi-Fi APSTA、BLE 被动扫描、LR1121 持续接收�
 | LR1121 | DIO1=6、NSS=42、RESET=39、BUSY=41 | 与电子纸共用 SCK=40、MOSI=45、MISO=46；LoRa_3V3 由 GPIO38 控制的 3V3 域经 R42 (0R) 供电，R43 (ESP_3V3) 未装 | 初始化、持续 RX、按键 TX、RSSI/SNR、错误计数、Sleep；断电后全部 ESP32 连接脚高阻隔离 |
 | 2.9 寸电子纸 | BUSY=8、RESET=9、DC=17、CS=18；原理图功能块标题仍写作“2.13inch e-Paper” | GPIO38 经 Q3/Q1 控制共享 3V3 外设域；与 LR1121 共用 SPI | 按项目目标使用 SSD16xx 2.9 寸配置；首次/唤醒/关键状态全刷，运行状态使用快刷且每 10 次快刷插入一次全刷；Sleep、释放 framebuffer/LVGL；面板型号和波形需实物确认 |
 | WS2812 | GPIO21 | 由 GPIO38 控制的共享 3V3 域供电 | 红/绿/蓝测试后保持板级限定白光负载；休眠前关闭并随共享电源域断电 |
-| PCF85063A | I2C 0x51，INT=GPIO7 | I2C SDA=13、SCL=14；VDD 由 3V3/V_BAT 二极管或供电 | 只读时间、电压低标志、INT 和 Control_2；休眠前停 1 Hz 定时器并清 IRQ；备份电源保持运行 |
+| PCF85063A | I2C 0x51，INT=GPIO7 | I2C SDA=13、SCL=14；VDD 由 3V3/V_BAT 二极管或供电 | 时间无效或 VL 置位时写入固件编译时间并读回校验，已有有效时间保留；读取 INT 和 Control_2；休眠前停 1 Hz 定时器并清 IRQ |
 | AXP2602 | I2C 0x62，BAT_STAT=47、IRQ=48 | 无板级负载开关 | 电压/电流/SOC/温度、充电脚、IRQ 事件和 Sleep；保留句柄时 Wake，深睡复位后 init 清 Sleep 并恢复 Normal |
 | microSD | CMD=10、D0=11、CLK=12 | SDMMC 1-bit；由 GPIO38 控制的共享 3V3 域供电 | 不格式化、不写文件；挂载后只读前 1 MiB 并计算 CRC/吞吐，休眠前卸载并断电 |
 | USB Type-C | D-=GPIO19、D+=GPIO20，经 ESD/共模器件 | VBUS 同时进入板上供电/充电路径 | USB Serial/JTAG 控制台已配置；枚举、线缆和信号完整性需实物确认 |
@@ -33,6 +33,10 @@ Deep-sleep 前必须把 DIO1、NSS、RESET、BUSY 和全部 SPI 引脚设为高�
 PCF85063A 的 V_BAT 备份路径以及 AXP2602/稳压器的静态功耗仍构成实测下限。
 原理图中的 Q4 (AO3401) 属于 VBUS 到 LDO_IN 的自动电源路径，不是 LR1121
 电源开关。
+
+RTC 自动初始化使用固件中记录的编译日期和时间（编译主机本地时间），仅作为
+出厂测试初始值，不等于烧录时的准确时间。需要启用 `CONFIG_APP_COMPILE_TIME_DATE`。
+写入、读回、日期校验或 VL 清除失败仍判为 FAIL；有效时间在复位和唤醒后不重写。
 
 ## Wi-Fi 配置
 
@@ -96,6 +100,11 @@ GPIO0/GPIO1 稳定释放，避免刚睡下就立即唤醒。GPIO0 是 strapping 
 
 ## 满负载内容
 
+- 上电和唤醒后先开启共享外设电源，执行红/绿/蓝灯测试并保持白灯；随后
+  显示 `SELF TEST / Testing hardware...`。耗时自检由独立任务执行，与启动页
+  刷新并行；外设检测按顺序进行，通过现有锁协调共享 SPI 和屏幕访问。
+  完成后显示 `BOARD TEST` 结果页，刷新完成后停留 2 秒，再启动无线、按键
+  和持续压力测试，进入运行页。若后台任务创建失败，会记录警告并串行完成自检。
 - 两个固定核心任务持续执行可重复校验的整数、FPU、PSA SHA-256、内部 RAM 和
   PSRAM 工作负载，记录摘要、错误、迭代、带宽和栈最低余量。
 - 每轮定期让出一个 tick，保留 CPU0/CPU1 Idle Task、任务看门狗和中断看门狗
@@ -103,7 +112,9 @@ GPIO0/GPIO1 稳定释放，避免刚睡下就立即唤醒。GPIO0 是 strapping 
 - 启动自检完整只读 16 MB Flash 并记录 CRC/吞吐，不擦除或写入任何分区。
 - Wi-Fi APSTA 禁用 power save，BLE Observer 持续被动扫描，LR1121 默认持续
   RX；这三项与双核计算共同形成正常运行负载。
-- UART 每 30 秒输出一次状态；电子纸默认每 5 分钟刷新运行状态。首次启动、
+- UART 每 30 秒输出一次状态；电子纸默认每 5 分钟刷新运行状态。LoRa 接收
+  计数变化也会触发运行页刷新，连续收包合并为最新计数，两次接收触发的刷新
+  之间至少间隔 2 秒（从上一次刷新结束计时）；发送完成后也会刷新。首次启动、
   唤醒、自检总结和休眠提示使用全刷，普通状态刷新调用 SSD16xx 驱动的
   `EPD_UPDATE_FAST` 全屏快刷；连续 10 次快刷后自动插入一次全刷清理残影。
 - UI 使用 Terminus Bold 8x14 的 ASCII 1-bpp 点阵字模，不使用灰阶抗锯齿，
@@ -155,7 +166,27 @@ idf.py -p PORT flash monitor
 python static_contract_check.py
 ~~~
 
+完成构建后，可在已加载 ESP-IDF 环境的 Ubuntu Bash 中运行 BLE 队列生命周期
+回归测试（需要主机 C 编译器，不连接板卡）：
+
+~~~bash
+python tests/test_nimble_observer_deinit.py -v
+~~~
+
 ## 预期日志与判定
+
+部分 ESP-IDF 6.2 开发版本在 BLE 仅 Observer 模式下，退出时会释放未初始化的
+RX 数据队列，导致 `ble_mqueue_deinit / npl_eventq_queued_get_task` 空指针崩溃。
+工程通过 `cmake/nimble_observer_deinit.cmake` 在构建目录生成带条件保护的
+`ble_hs.c`，使释放条件与初始化一致；不修改已安装 SDK，仍执行完整的
+`nimble_port_stop()` 和 `nimble_port_deinit()`。SDK 若已包含相同保护则不再应用；
+源码结构变化时构建会提示重新审查此兼容修复。
+
+休眠复测应先看到 `BLE stop/deinit: PASS`，随后
+`entering deep sleep: GPIO0 RTC=HIGH, EXT1 ANY_LOW only`，并在松开按键后保持
+休眠；单击 GPIO0 后应出现 `DEEP_SLEEP_WAKE` 和 `ext1_gpio_mask=0x0000000000000001`。
+`SLEEP_CANCELLED` 表示取消休眠后恢复，`USB_RESET` 表示 USB 引发复位；
+`Guru Meditation` 表示崩溃，均不能按正常 GPIO0 唤醒判定。
 
 串口会输出 SELF_TEST 表、state= 状态切换、双核压力摘要、Wi-Fi/BLE 状态、
 LoRa TX/RX 计数和每个 PREPARE_SLEEP 步骤。状态含义：

@@ -1,6 +1,6 @@
 dependencies:
   idf: ">=5.4.3"
-  espressif/esp_board_manager: "0.6.1"
+  # Board Manager is provided by main's waveshare/waveshare_boards dependency.
   espressif/led_strip: "3.0.3"
   tuanpmt/esp_epaper: "2.0.0"
   lvgl/lvgl: "^9.4.0"
@@ -9,4 +9,4 @@ dependencies:
 description: Runtime support for Waveshare ESP32-S3-LR1121-ePaper-2.9
 targets:
   - esp32s3
-version: 0.4.0
+version: 0.1.0

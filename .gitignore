@@ -28,3 +28,6 @@ __pycache__/
 /_backups/
 /.agents/
 /.codex/
+
+# Board Manager regenerates these sources for the selected board.
+gen_bmgr_codes/

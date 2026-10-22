@@ -1,0 +1,49 @@
+menu "03 e-Paper display"
+
+choice EPAPER_DEMO_MODE
+    prompt "Display mode"
+    default EPAPER_DEMO_FUNCTIONAL
+    help
+        Keep Functional for customer firmware. Photo modes show a static
+        product card once; HF/LF are manually selected artwork labels,
+        not radio configuration or hardware detection.
+
+    config EPAPER_DEMO_FUNCTIONAL
+        bool "Functional (customer default)"
+
+    config EPAPER_DEMO_PHOTO_HF
+        bool "Photo display - HF"
+
+    config EPAPER_DEMO_PHOTO_LF
+        bool "Photo display - LF"
+
+    config EPAPER_DEMO_CLEAR
+        bool "Clear screen (full white, then sleep)"
+        help
+            Clear the entire display to white with one full refresh on
+            each boot, then put the panel to sleep and keep the blank
+            screen. No text or periodic refresh is shown. Select
+            Functional again and rebuild for normal customer firmware.
+endchoice
+
+choice EPAPER_PHOTO_RENDERER
+    prompt "Photo gray rendering"
+    depends on EPAPER_DEMO_PHOTO_HF || EPAPER_DEMO_PHOTO_LF
+    default EPAPER_PHOTO_DITHER
+    help
+        Dither works with the existing monochrome panel driver. Native
+        four-gray requires the Waveshare 2.9inch V2 panel waveform.
+        Resolution and the SSD16xx family alone do not identify the panel.
+
+    config EPAPER_PHOTO_DITHER
+        bool "B/W dither (compatible; simulated gray using dots)"
+
+    config EPAPER_PHOTO_GRAY4_V2
+        bool "Native 4-gray - Waveshare 2.9inch V2 (verify panel)"
+        help
+            Select only for a panel matching the official 2.9inch V2
+            Gray4 waveform. This is not automatic panel detection.
+            Native gray levels and orientation require a real panel test.
+endchoice
+
+endmenu

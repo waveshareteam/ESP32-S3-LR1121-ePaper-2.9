@@ -117,6 +117,10 @@ jobs:
           . "$IDF_PATH/export.sh"
           build_dir="$GITHUB_WORKSPACE/.ci-build/esp-idf/$EXAMPLE_SLUG-$FRAMEWORK_VERSION"
           idf.py --version
+          if [ "$EXAMPLE_SLUG" != "07_sd_card" ]; then
+            python -m pip install esp-bmgr-assist==0.8.3
+            idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9 -c "$GITHUB_WORKSPACE/examples/esp-idf/boards"
+          fi
           idf.py -C "$EXAMPLE_PATH" -B "$build_dir" set-target "$BUILD_TARGET" build
       - name: Package and validate firmware
         shell: bash

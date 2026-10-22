@@ -2,14 +2,14 @@
 
 #include <cstring>
 
+#include "WaveshareFont.h"
+
 namespace waveshare {
 
 namespace {
 SPISettings kEpaperSpi(10000000, MSBFIRST, SPI_MODE0);
 
-// Compact 5x7 glyphs for ASCII 32..126, stored column first.
-const uint8_t kFont[][5] PROGMEM = {
-{0,0,0,0,0},{0,0,95,0,0},{0,7,0,7,0},{20,127,20,127,20},{36,42,127,42,18},{35,19,8,100,98},{54,73,85,34,80},{0,5,3,0,0},{0,28,34,65,0},{0,65,34,28,0},{20,8,62,8,20},{8,8,62,8,8},{0,80,48,0,0},{8,8,8,8,8},{0,96,96,0,0},{32,16,8,4,2},{62,81,73,69,62},{0,66,127,64,0},{66,97,81,73,70},{33,65,69,75,49},{24,20,18,127,16},{39,69,69,69,57},{60,74,73,73,48},{1,113,9,5,3},{54,73,73,73,54},{6,73,73,41,30},{0,54,54,0,0},{0,86,54,0,0},{8,20,34,65,0},{20,20,20,20,20},{0,65,34,20,8},{2,1,81,9,6},{50,73,121,65,62},{126,17,17,17,126},{127,73,73,73,54},{62,65,65,65,34},{127,65,65,34,28},{127,73,73,73,65},{127,9,9,9,1},{62,65,73,73,122},{127,8,8,8,127},{0,65,127,65,0},{32,64,65,63,1},{127,8,20,34,65},{127,64,64,64,64},{127,2,12,2,127},{127,4,8,16,127},{62,65,65,65,62},{127,9,9,9,6},{62,65,81,33,94},{127,9,25,41,70},{70,73,73,73,49},{1,1,127,1,1},{63,64,64,64,63},{31,32,64,32,31},{63,64,56,64,63},{99,20,8,20,99},{7,8,112,8,7},{97,81,73,69,67},{0,127,65,65,0},{2,4,8,16,32},{0,65,65,127,0},{4,2,1,2,4},{64,64,64,64,64},{0,1,2,4,0},{32,84,84,84,120},{127,72,68,68,56},{56,68,68,68,32},{56,68,68,72,127},{56,84,84,84,24},{8,126,9,1,2},{12,82,82,82,62},{127,8,4,4,120},{0,68,125,64,0},{32,64,68,61,0},{127,16,40,68,0},{0,65,127,64,0},{124,4,24,4,120},{124,8,4,4,120},{56,68,68,68,56},{124,20,20,20,8},{8,20,20,24,124},{124,8,4,4,8},{72,84,84,84,32},{4,63,68,64,32},{60,64,64,32,124},{28,32,64,32,28},{60,64,48,64,60},{68,40,16,40,68},{12,80,80,80,60},{68,100,84,76,68},{0,8,54,65,0},{0,0,127,0,0},{0,65,54,8,0},{2,1,2,4,2}};
+
 }
 
 size_t Epaper::bufferSize() const {
@@ -138,10 +138,10 @@ void Epaper::drawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool black) {
 void Epaper::drawChar(int16_t x, int16_t y, char value, uint8_t scale,
                       bool black) {
   if (value < 32 || value > 126) value = '?';
-  for (uint8_t column = 0; column < 5; ++column) {
-    const uint8_t bits = pgm_read_byte(&kFont[value - 32][column]);
-    for (uint8_t row = 0; row < 7; ++row) {
-      if ((bits & (1U << row)) == 0) continue;
+  for (uint8_t row = 0; row < 14; ++row) {
+    const uint8_t bits = pgm_read_byte(&kTerminusBold[(value - 32) * 14 + row]);
+    for (uint8_t column = 0; column < 8; ++column) {
+      if ((bits & (0x80U >> column)) == 0) continue;
       for (uint8_t dx = 0; dx < scale; ++dx)
         for (uint8_t dy = 0; dy < scale; ++dy)
           drawPixel(x + column * scale + dx, y + row * scale + dy, black);
@@ -154,7 +154,7 @@ void Epaper::drawText(int16_t x, int16_t y, const char *text, uint8_t scale,
   if (text == nullptr || scale == 0) return;
   while (*text != '\0') {
     drawChar(x, y, *text++, scale, black);
-    x += 6 * scale;
+    x += 8 * scale;
   }
 }
 
@@ -194,23 +194,66 @@ bool Epaper::refresh(RefreshMode requested) {
   return true;
 }
 
+void Epaper::drawLabel(int16_t x, int16_t y, int16_t maxWidth,
+                       const char *text, bool black) {
+  if (!text || maxWidth < 8) return;
+  const size_t capacity = maxWidth / 8;
+  const size_t length = strlen(text);
+  for (size_t i = 0; i < length && i < capacity; ++i) {
+    const char ch = length > capacity && capacity >= 3 && i >= capacity - 3
+                        ? '.' : text[i];
+    drawChar(x + i * 8, y, ch, 1, black);
+  }
+}
+
 bool Epaper::showLines(const char *title, const char *const *lines, size_t count,
                        bool forceFull) {
+  if (count > 7 || (count && !lines)) {
+    lastError_ = "showLines requires 0..7 lines";
+    return false;
+  }
   clear();
-  drawRect(0, 0, width(), height());
-  drawText(8, 8, title == nullptr ? "STATUS" : title, 2);
-  int16_t y = 30;
-  for (size_t i = 0; i < count && y + 7 < height(); ++i, y += 12)
-    drawText(8, y, lines[i] == nullptr ? "" : lines[i]);
+  const int16_t w = width(), h = height();
+  const bool full = forceFull || fastCount_ == 0 || fastCount_ >= kFastRefreshLimit;
+  for (int16_t y = 0; y < 22; ++y) drawLine(0, y, w - 1, y);
+  drawLabel(7, 3, w - 72, title ? title : "STATUS", false);
+  for (int16_t y = 3; y < 19; ++y) drawLine(w - 57, y, w - 8, y, false);
+  drawText(w - 48, 4, full ? "FULL" : "FAST");
+  drawRect(5, 25, w - 10, h - 30);
+  const int16_t bodyHeight = h - 32;
+  if (count == 7) {
+    const int16_t split = w / 2;
+    const int16_t footer = 26 + bodyHeight * 3 / 4;
+    drawLine(split, 26, split, footer - 1);
+    for (size_t i = 0; i < 6; ++i) {
+      const int16_t top = 26 + bodyHeight * (i / 2) / 4;
+      const int16_t bottom = 26 + bodyHeight * (i / 2 + 1) / 4;
+      const int16_t left = (i % 2) ? split + 6 : 11;
+      drawLabel(left, top + (bottom - top - 14) / 2,
+                split - 17, lines[i]);
+      if (i % 2 && i < 5) drawLine(10, bottom, w - 11, bottom);
+    }
+    for (int16_t y = footer; y < h - 6; ++y) drawLine(6, y, w - 7, y);
+    drawLabel(9, footer + (h - 6 - footer - 14) / 2, w - 18, lines[6], false);
+  } else {
+    const size_t rows = count ? count : 1;
+    for (size_t i = 0; i < rows; ++i) {
+      const int16_t top = 26 + bodyHeight * i / rows;
+      const int16_t bottom = 26 + bodyHeight * (i + 1) / rows;
+      if (i) drawLine(10, top, w - 11, top);
+      drawLabel(11, top + (bottom - top - 14) / 2, w - 22,
+                count ? lines[i] : "No data");
+    }
+  }
   return refresh(forceFull ? RefreshMode::Full : RefreshMode::Fast);
 }
 
-bool Epaper::sleep() {
+bool Epaper::sleep(bool powerOff) {
   if (!initialized_) return true;
   command(0x10); data(0x01);
   delay(100);
   initialized_ = false;
-  setSharedPower(false);
+  if (powerOff) setSharedPower(false);
   return true;
 }
 

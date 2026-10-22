@@ -5,21 +5,22 @@
 本仓库整理了 Waveshare ESP32-S3-LR1121-ePaper-2.9（产品版本
 1.0.0）的 ESP-IDF 示例、Arduino 示例、产品图片和硬件资料。
 
-![正面](assets/product/front.png)
-
-![背面](assets/product/back.png)
-
 ## 当前状态
 
 源码按对应的 ESP-IDF 与 Arduino 示例面组织，并包含独立的 1-bit SDMMC
 存储卡测试。CI 与固件打包配置覆盖所有一方示例。编译和 CI 不能替代
 烧录与实板验证。
 
-当前原理图仍位于待审目录，因为其中一个电子纸连接器标注与图纸产品
-标题不一致。尺寸图和工厂恢复固件已预留位置，待后续资料补齐。
+原理图位于 `hardware/schematics/`，其中连接器块的屏幕尺寸标注仍需核对。
+HF/LF 参考固件已放入 `firmware/`；产品图片和尺寸图在当前快照中缺失，
+编写手册时需另行补齐。
 
 ## 快速入口
 
+- 使用手册交接：[`docs/manual-handoff.zh-CN.md`](docs/manual-handoff.zh-CN.md)
+
+- 中文 Wiki：[`docs/wiki.zh-CN.md`](docs/wiki.zh-CN.md)
+- 硬件事实清单：[`docs/hardware-facts.zh-CN.md`](docs/hardware-facts.zh-CN.md)
 - ESP-IDF 项目：[`examples/esp-idf/`](examples/esp-idf/)
 - Arduino 示例和随仓库库文件：[`examples/arduino/`](examples/arduino/)
 - 硬件资料：[`hardware/`](hardware/)
@@ -28,6 +29,10 @@
 
 每个编号目录都是独立示例。构建或烧录前，请先阅读对应框架和示例目录
 中的 README。
+
+当前 Wiki 和详情页按“已确认 / 实现参考 / 用户提供待复测 / 待确认”管理
+规格。用户提供的“低于 12 µA”仅作为特定条件下的阶段性目标或实测信息，
+在补齐固件、供电、测量点、仪表和环境条件前不作为无条件产品保证。
 
 ## 示例
 
@@ -55,7 +60,8 @@ LoRaWAN 示例使用占位凭据。启用射频通信前必须按部署地区确
 
 GitHub Actions 工作流会动态发现直接位于示例目录下的一方项目，当前
 配置矩阵为 ESP-IDF v5.5.5、ESP-IDF v6.0.2 和 Arduino-ESP32 3.3.11。
-成功构建后，工作流计划生成可直接烧录的 ZIP，其中包含 manifest、
+ESP-IDF 09 综合示例需要 6.2 开发版本 API，不在当前稳定版矩阵支持范围内；
+合并前需要单独确定它的 CI 版本策略。成功构建后，工作流计划生成可直接烧录的 ZIP，其中包含 manifest、
 SHA-256 校验值、原始分段、合并固件以及 Windows/POSIX 烧录脚本。
 推送 `v*` 标签时，工作流计划将这些包发布到 GitHub Releases。
 
@@ -66,5 +72,5 @@ SHA-256 校验值、原始分段、合并固件以及 Windows/POSIX 烧录脚本
 
 原创代码使用 Apache-2.0；原创图片、文档、原理图及硬件资料使用
 CC BY 4.0。嵌套的第三方许可证继续优先适用。详见
-[`LICENSES/README.md`](LICENSES/README.md) 和
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 和
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。

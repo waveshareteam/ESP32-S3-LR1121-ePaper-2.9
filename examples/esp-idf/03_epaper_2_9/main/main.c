@@ -1,9 +1,14 @@
 #include <stdio.h>
 
+#include "sdkconfig.h"
 #include "board_epaper.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#if CONFIG_EPAPER_DEMO_PHOTO_HF || CONFIG_EPAPER_DEMO_PHOTO_LF
+#include "photo_display.h"
+#endif
 
 static const char *TAG = "epaper_test";
 
@@ -12,6 +17,30 @@ void app_main(void)
     board_epaper_t panel = {0};
     ESP_ERROR_CHECK(board_epaper_start(&panel));
 
+#if CONFIG_EPAPER_DEMO_CLEAR
+    ESP_ERROR_CHECK(board_epaper_lock(-1) ? ESP_OK : ESP_ERR_TIMEOUT);
+    lv_obj_t *screen = lv_display_get_screen_active(panel.display);
+    if (!screen) {
+        board_epaper_unlock();
+        ESP_ERROR_CHECK(ESP_ERR_INVALID_STATE);
+        return;
+    }
+    lv_obj_clean(screen);
+    lv_obj_remove_style_all(screen);
+    lv_obj_set_style_bg_color(screen, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+    board_epaper_unlock();
+
+    ESP_ERROR_CHECK(board_epaper_refresh(true));
+    ESP_ERROR_CHECK(board_epaper_sleep());
+    ESP_LOGI(TAG, "screen cleared to white; panel sleeping; periodic refresh disabled");
+    return;
+#elif CONFIG_EPAPER_DEMO_PHOTO_HF || CONFIG_EPAPER_DEMO_PHOTO_LF
+    ESP_ERROR_CHECK(photo_display_show(&panel));
+    ESP_LOGI(TAG, "photo screen shown; periodic refresh disabled");
+    return;
+#else
     char panel_line[24];
     snprintf(panel_line, sizeof(panel_line), "%ux%u", panel.info.width, panel.info.height);
     char count_line[24] = "Update: 0";
@@ -34,4 +63,5 @@ void app_main(void)
         snprintf(count_line, sizeof(count_line), "Update: %lu", (unsigned long)count);
         ESP_ERROR_CHECK(board_epaper_show_lines("EPD 2.9", lines, 6, false));
     }
+#endif
 }

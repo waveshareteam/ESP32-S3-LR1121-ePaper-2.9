@@ -15,6 +15,25 @@
 
 static const char *TAG = "power_state";
 
+static esp_err_t wait_for_rtc_gpio0_release(void)
+{
+    const TickType_t started = xTaskGetTickCount();
+    TickType_t high_since = started;
+    while ((TickType_t)(xTaskGetTickCount() - started) < pdMS_TO_TICKS(3000)) {
+        const TickType_t now = xTaskGetTickCount();
+        if (rtc_gpio_get_level(BOARD_BUTTON_SLEEP_GPIO) == 0) {
+            high_since = now;
+        } else if ((TickType_t)(now - high_since) >=
+                   pdMS_TO_TICKS(TEST_BUTTON_RELEASE_MS)) {
+            ESP_LOGI(TAG, "GPIO0 RTC input stably HIGH; wake button released");
+            return ESP_OK;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    ESP_LOGE(TAG, "GPIO0 RTC input not stably HIGH; deep sleep cancelled");
+    return ESP_ERR_TIMEOUT;
+}
+
 static void record_step(const char *name, esp_err_t ret,
                         esp_err_t *first_error)
 {
@@ -50,13 +69,19 @@ esp_err_t test_sleep_prepare_wakeup(void)
         ESP_ERR_INVALID_STATE, TAG,
         "GPIO0 is held low; refusing deep sleep");
 
-    (void)rtc_gpio_hold_dis(BOARD_BUTTON_SLEEP_GPIO);
+    ESP_RETURN_ON_ERROR(rtc_gpio_hold_dis(BOARD_BUTTON_SLEEP_GPIO), TAG,
+                        "release GPIO0 RTC hold failed");
     ESP_RETURN_ON_ERROR(rtc_gpio_init(BOARD_BUTTON_SLEEP_GPIO), TAG,
                         "switch GPIO0 to RTC IO failed");
+    ESP_RETURN_ON_ERROR(
+        rtc_gpio_set_direction(BOARD_BUTTON_SLEEP_GPIO, RTC_GPIO_MODE_INPUT_ONLY),
+        TAG, "enable GPIO0 RTC input failed");
     ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(BOARD_BUTTON_SLEEP_GPIO), TAG,
                         "disable GPIO0 RTC pull-up failed");
     ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(BOARD_BUTTON_SLEEP_GPIO), TAG,
                         "disable GPIO0 RTC pull-down failed");
+    ESP_RETURN_ON_ERROR(wait_for_rtc_gpio0_release(), TAG,
+                        "GPIO0 RTC release check failed");
     ESP_RETURN_ON_ERROR(
         esp_sleep_enable_ext1_wakeup_io(
             BIT64(BOARD_BUTTON_SLEEP_GPIO), ESP_EXT1_WAKEUP_ANY_LOW),
@@ -86,14 +111,28 @@ esp_err_t test_sleep_prepare_peripherals(void)
     record_step("AXP2602 IRQ off/sleep", ret, &first_error);
     ret = board_epaper_deinit();
     record_step("e-paper/LVGL/power off", ret, &first_error);
+    if (first_error != ESP_OK) {
+        return first_error;
+    }
+
+    /* Drivers may reset pin configuration during deinit; apply holds afterwards. */
     ret = board_support_deinit();
     record_step("Board Manager/buses off", ret, &first_error);
+    if (first_error != ESP_OK) {
+        return first_error;
+    }
+    ret = board_shared_power_hold_off();
+    record_step("shared 3V3 held off", ret, &first_error);
+    if (first_error != ESP_OK) {
+        return first_error;
+    }
     ret = board_prepare_gpio_deep_sleep();
     record_step("board GPIO safe levels", ret, &first_error);
+    if (first_error != ESP_OK) {
+        return first_error;
+    }
     ret = board_radio_isolate_powered_off_pins();
     record_step("LR1121/SPI powered-off Hi-Z", ret, &first_error);
-    ret = board_shared_power_hold_off();
-    record_step("shared peripheral power held off", ret, &first_error);
 
     if (first_error == ESP_OK) {
         gpio_deep_sleep_hold_en();
@@ -122,7 +161,7 @@ void test_sleep_abort(void)
         .intr_type = GPIO_INTR_DISABLE,
     };
     (void)gpio_config(&config);
-    ESP_LOGW(TAG, "sleep aborted; wake source and GPIO holds released");
+    ESP_LOGI(TAG, "wake configuration cleared; GPIO holds released");
 }
 
 esp_err_t test_sleep_enter_low_power(void)
@@ -131,6 +170,13 @@ esp_err_t test_sleep_enter_low_power(void)
              "state=LOW_POWER; deep sleep starts after final UART drain");
     fflush(stdout);
     vTaskDelay(pdMS_TO_TICKS(100));
+    /* Check the actual wake input after all shutdown work and UART draining. */
+    ESP_RETURN_ON_ERROR(wait_for_rtc_gpio0_release(), TAG,
+                        "final GPIO0 release check failed");
+    ESP_RETURN_ON_FALSE(rtc_gpio_get_level(BOARD_BUTTON_SLEEP_GPIO) == 1,
+                        ESP_ERR_INVALID_STATE, TAG,
+                        "GPIO0 became LOW; deep sleep cancelled");
+    ESP_LOGI(TAG, "entering deep sleep: GPIO0 RTC=HIGH, EXT1 ANY_LOW only");
     esp_deep_sleep_start();
     return ESP_ERR_INVALID_STATE;
 }

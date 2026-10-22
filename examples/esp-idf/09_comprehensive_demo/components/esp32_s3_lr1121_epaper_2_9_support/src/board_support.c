@@ -472,7 +472,6 @@ esp_err_t board_support_deinit(void)
     s_i2c_bus = NULL;
     s_status_led = NULL;
     s_rtc = NULL;
-    s_axp2602 = NULL;
     s_boot_handle = NULL;
     s_spi_handle = NULL;
     s_spi_owner = BOARD_SPI_OWNER_NONE;

@@ -6,10 +6,6 @@ This repository contains first-party ESP-IDF and Arduino examples, product
 images, and hardware documentation for the Waveshare
 ESP32-S3-LR1121-ePaper-2.9, product revision 1.0.0.
 
-![Front view](assets/product/front.png)
-
-![Back view](assets/product/back.png)
-
 ## Repository status
 
 The source examples are organized as matching ESP-IDF and Arduino surfaces,
@@ -17,9 +13,11 @@ including a standalone 1-bit SDMMC card test. The CI and firmware packaging
 definitions cover every first-party example. Compilation and CI do not replace
 flashing and physical-board validation.
 
-The supplied schematic remains under pending review because one e-paper
-connector label conflicts with the product title. Mechanical drawings and
-factory recovery firmware are reserved for a later update.
+The supplied schematic is in `hardware/schematics/`; its connector label
+still needs panel-revision review. HF/LF binary references are in `firmware/`.
+Product images and mechanical drawings are not included in this snapshot.
+Use the [manual handoff](docs/manual-handoff.zh-CN.md) for current numbering,
+setup instructions and validation limits.
 
 ## Getting started
 
@@ -58,7 +56,9 @@ radio activation. Never publish real network keys in source code or logs.
 
 The GitHub Actions workflow discovers direct first-party examples and is
 configured for ESP-IDF v5.5.5, ESP-IDF v6.0.2, and Arduino-ESP32 3.3.11.
-Successful builds are designed to produce flashable ZIP archives containing a
+The ESP-IDF 09 comprehensive demo requires 6.2 development APIs and is not
+covered by the configured stable IDF versions; its CI entries need a separate
+framework decision before merge. Successful builds are designed to produce flashable ZIP archives containing a
 manifest, SHA-256 checksums, source binary segments, a combined image, and
 Windows/POSIX flash helpers. A `v*` tag is designed to publish those archives
 as a GitHub Release.
@@ -73,12 +73,12 @@ sleep, timing, or other physical hardware behavior.
 | --- | --- |
 | `examples/esp-idf/` | First-party ESP-IDF projects |
 | `examples/arduino/` | First-party Arduino sketches and bundled library |
-| `assets/` | Product images |
+| `examples/esp-idf/boards/` | Source board definitions |
 | `hardware/` | Schematics and mechanical-document placeholders |
 | `config/` | Machine-readable CI configuration |
 | `scripts/` | Example discovery and static automation |
 | `releases/` | Source-build firmware packaging |
-| `firmware/` | Factory/recovery firmware placeholder |
+| `firmware/` | Supplied HF/LF binary references |
 | `docs/` | Repository and maintainer documentation |
 
 See [`docs/repository-structure.md`](docs/repository-structure.md) for
@@ -86,11 +86,9 @@ generated-file and publication boundaries.
 
 ## Hardware documents
 
-- Product images: [`assets/product/`](assets/product/)
-- Schematic pending review:
-  [`hardware/schematics/`](hardware/schematics/)
-- Mechanical drawings pending:
-  [`hardware/dimensions/`](hardware/dimensions/)
+- Schematic: [`hardware/schematics/`](hardware/schematics/)
+- Firmware references: [`firmware/`](firmware/)
+- Product images and mechanical drawings: awaiting source material.
 
 ## Support and contribution
 
@@ -102,5 +100,5 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SUPPORT.md`](SUPPORT.md), and
 Original software is licensed under Apache License 2.0. Original
 documentation, images, schematics, and hardware materials are licensed under
 CC BY 4.0. Nested third-party licenses remain authoritative. See
-[`LICENSES/README.md`](LICENSES/README.md) and
+the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/) and
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

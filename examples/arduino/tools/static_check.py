@@ -20,9 +20,13 @@ LORAWAN_EXAMPLES = [
     "13_LoRaWAN_Multicast",
 ]
 FRAMEWORK_HEADERS = {
-    "Arduino.h", "FS.h", "Preferences.h", "RadioLib.h", "SD_MMC.h",
-    "SPI.h", "WiFi.h", "Wire.h", "cstring", "esp32-hal-rgb-led.h",
-    "esp_sleep.h",
+    "Arduino.h", "FS.h", "Preferences.h", "RadioLib.h", "SPI.h", "WiFi.h",
+    "Wire.h", "cstring", "esp32-hal-rgb-led.h", "esp_sleep.h",
+    "BLEDevice.h", "SD_MMC.h", "atomic", "stdint.h", "driver/gpio.h",
+    "driver/rtc_io.h", "esp_crc.h", "esp_flash.h", "esp_heap_caps.h",
+    "esp_random.h", "esp_timer.h", "freertos/FreeRTOS.h",
+    "freertos/event_groups.h", "freertos/queue.h", "freertos/task.h",
+    "mbedtls/aes.h", "mbedtls/sha256.h", "time.h",
 }
 
 
@@ -38,11 +42,10 @@ def text(path: Path) -> str:
 
 def code_files() -> list[Path]:
     suffixes = {".h", ".cpp", ".ino"}
+    # Inspect first-party examples and their board library, not bundled RadioLib.
     bases = [LIB / "src", *(ROOT / name for name in EXPECTED)]
-    return [
-        path for base in bases
-        for path in base.rglob("*") if path.suffix in suffixes
-    ]
+    return [path for base in bases for path in base.rglob("*")
+            if path.suffix in suffixes]
 
 
 def check_examples() -> None:
@@ -283,8 +286,8 @@ def check_docs_and_language() -> None:
     for target in re.findall(r"`(examples/arduino/[^ `]+)`", readme):
         resolved = ROOT.parents[1] / target.rstrip(".,")
         require(resolved.exists(), f"README path missing: {target}")
-    require("successful Verify proves compilation only" in readme,
-            "README lacks validation boundary")
+    require("hardware validation" in readme,
+            "README lacks hardware validation boundary")
     require("forceHighPower=true" in readme and "HP antenna path" in readme,
             "README lacks the default LR1121 HP path")
 

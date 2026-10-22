@@ -423,6 +423,10 @@ static int16_t configure_radio(void)
     if (state != RADIOLIB_ERR_NONE) {
         return state;
     }
+    state = s_radio->setRxBoostedGainMode(true);
+    if (state != RADIOLIB_ERR_NONE) {
+        return state;
+    }
     return s_radio->setPreambleLength(s_config.preamble_len);
 }
 

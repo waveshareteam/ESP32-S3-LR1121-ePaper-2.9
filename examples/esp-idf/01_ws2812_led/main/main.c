@@ -1,16 +1,20 @@
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 
-#include "esp_board_manager_includes.h"
+#include "dev_led_strip.h"
+#include "esp_board_manager.h"
+#include "esp_board_periph.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "led_strip.h"
+#include "periph_gpio.h"
 
 static const char *TAG = "ws2812_test";
 
-#define BOARD_DEVICE_STATUS_LED   "status_led"
-#define BOARD_DEVICE_EPAPER       "epaper_ssd16xx"
+#define BOARD_STATUS_LED          "status_led"
+#define BOARD_POWER_PERIPH        "gpio_epaper_power"
 #define WS2812_MAX_BRIGHTNESS     48
 #define POWER_STABILIZE_MS        100
 #define COLOR_HOLD_MS             1200
@@ -18,21 +22,24 @@ static const char *TAG = "ws2812_test";
 #define BREATH_STEPS              360
 #define PI_F                      3.14159265358979323846f
 
+static void enable_ws2812_power(void)
+{
+    periph_gpio_handle_t *power = NULL;
+    // Acquiring this peripheral applies the board YAML's output/default_level.
+    // Keep the reference for the lifetime of the continuous LED demo.
+    ESP_ERROR_CHECK(esp_board_periph_ref_handle(BOARD_POWER_PERIPH, (void **)&power));
+    ESP_LOGI(TAG, "Power enabled by Board Manager: %s=GPIO%d, settling %d ms",
+             BOARD_POWER_PERIPH, (int)power->gpio_num, POWER_STABILIZE_MS);
+    vTaskDelay(pdMS_TO_TICKS(POWER_STABILIZE_MS));
+}
+
 static led_strip_handle_t ws2812_init(void)
 {
-    ESP_ERROR_CHECK(esp_board_manager_init());
-    ESP_ERROR_CHECK(esp_board_device_power_ctrl(BOARD_DEVICE_EPAPER, true));
-    ESP_LOGI(TAG, "Shared peripheral power enabled by Board Manager; settling %d ms",
-             POWER_STABILIZE_MS);
-    vTaskDelay(pdMS_TO_TICKS(POWER_STABILIZE_MS));
-
-    ESP_ERROR_CHECK(esp_board_manager_init_device_by_name(BOARD_DEVICE_STATUS_LED));
-    dev_led_strip_handles_t *handles = NULL;
-    ESP_ERROR_CHECK(esp_board_manager_get_device_handle(BOARD_DEVICE_STATUS_LED,
-                                                        (void **)&handles));
-    ESP_ERROR_CHECK(handles && handles->strip_handle ? ESP_OK : ESP_ERR_INVALID_STATE);
-    ESP_ERROR_CHECK(led_strip_clear(handles->strip_handle));
-    return handles->strip_handle;
+    dev_led_strip_handles_t *led = NULL;
+    ESP_ERROR_CHECK(esp_board_manager_init_device_by_name(BOARD_STATUS_LED));
+    ESP_ERROR_CHECK(esp_board_manager_get_device_handle(BOARD_STATUS_LED, (void **)&led));
+    ESP_ERROR_CHECK(led_strip_clear(led->strip_handle));
+    return led->strip_handle;
 }
 
 static void show_test_color(led_strip_handle_t strip, const char *name,
@@ -73,10 +80,13 @@ static void run_color_breathing(led_strip_handle_t strip)
 
 void app_main(void)
 {
+    // Prepare the registry, then initialize only the shared power GPIO and LED.
+    ESP_ERROR_CHECK(esp_board_manager_prepare());
+    enable_ws2812_power();
     led_strip_handle_t strip = ws2812_init();
 
-    ESP_LOGI(TAG, "WS2812 test uses Board Manager status_led configuration; "
-             "max brightness %d/255", WS2812_MAX_BRIGHTNESS);
+    ESP_LOGI(TAG, "WS2812 test: Board Manager device %s, max brightness %d/255",
+             BOARD_STATUS_LED, WS2812_MAX_BRIGHTNESS);
     show_test_color(strip, "RED", WS2812_MAX_BRIGHTNESS, 0, 0);
     show_test_color(strip, "GREEN", 0, WS2812_MAX_BRIGHTNESS, 0);
     show_test_color(strip, "BLUE", 0, 0, WS2812_MAX_BRIGHTNESS);

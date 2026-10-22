@@ -9,6 +9,10 @@
 
 using namespace waveshare;
 
+// Keep attributes on the first declaration; Arduino otherwise adds prototypes.
+[[noreturn]] void provisioningError();
+[[noreturn]] void stateError(const char *detail);
+
 const LoRaWANBand_t Region = EU868;
 LR1121BoardRadio boardRadio;
 LoRaWANNode node(&boardRadio.radio(), &Region, 0);

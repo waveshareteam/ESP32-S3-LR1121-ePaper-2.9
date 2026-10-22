@@ -4,7 +4,7 @@ dependencies:
     path: ../epaper_ui_font
   esp_epaper:
     path: ../esp_epaper
-  espressif/esp_board_manager: "0.6.1"
+  # Board Manager is provided by main's waveshare/waveshare_boards dependency.
   lvgl/lvgl: "^9.4.0"
   jgromes/radiolib: "7.7.1"
 description: Class C board support for Waveshare ESP32-S3-LR1121-ePaper-2.9
