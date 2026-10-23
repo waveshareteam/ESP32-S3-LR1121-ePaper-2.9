@@ -109,6 +109,14 @@ int main(int argc, char **argv) {
   const char *battery[]={"4120 mV  -123.5 mA","SOC 85%  TEMP 26 C","TTE 100  TTF 0 MIN"};
   assert(e.showLines("AXP2602",battery,3,true));
   if(argc>1) save(e,std::string(argv[1])+"/battery-"+std::to_string(width)+".pgm");
+  const char *sdPass[]={"Card: 32768 MiB", "Mount: OK (SDMMC 1-bit)",
+                        "Read/write: PASS", "Unmount: done"};
+  assert(e.showLines("SD PASS",sdPass,4,true));
+  if(argc>1) save(e,std::string(argv[1])+"/sd-pass-"+std::to_string(width)+".pgm");
+  const char *sdFail[]={"Card: not mounted", "Mount: FAIL (see serial)",
+                        "Read/write: skipped", "Unmount: not needed"};
+  assert(e.showLines("SD FAIL",sdFail,4));
+  if(argc>1) save(e,std::string(argv[1])+"/sd-fail-"+std::to_string(width)+".pgm");
   if(width==250) {
     rows[3]="BLE 01234567"; rows[5]="G0 2xSL/1xWK";
     rows[6]="T12345678 F00000000 R00000001";

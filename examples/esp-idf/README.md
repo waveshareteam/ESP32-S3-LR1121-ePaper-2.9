@@ -12,7 +12,7 @@ and uses its native `led_strip` handle for color updates.
 | `04_bat_axp2602` | AXP2602 battery-gauge data |
 | `05_rtc_pcf85063` | PCF85063A RTC and interrupt test |
 | `06_lr1121_pingpong` | LR1121 ping-pong test |
-| `07_sd_card` | microSD 1-bit SDMMC mount, card info, file write/read/cleanup test |
+| `07_sd_card` | microSD 1-bit SDMMC mount, file write/read/cleanup test, e-paper status |
 | `08_deep_sleep` | Deep-sleep and wake-up test |
 | `09_comprehensive_demo` | Combined board test |
 | `10_lr1121_lorawan` | LR1121 LoRaWAN Class A OTAA example |
@@ -22,9 +22,11 @@ and uses its native `led_strip` handle for color updates.
 
 ## Board Manager integration
 
-Examples 01–06 and 08–13 depend on `waveshare/waveshare_boards`, which
-brings in `espressif/esp_board_manager` transitively. Example 07 uses SDMMC
-and FATFS directly. Install the bootstrap helper in the active IDF environment:
+All examples 01–13 depend on `waveshare/waveshare_boards`, which brings in
+`espressif/esp_board_manager` transitively. Example 07 uses Board Manager for
+the shared power GPIO, SPI bus, and e-paper configuration, and native SDMMC/FATFS
+for card operations. Install the
+bootstrap helper in the active IDF environment:
 
 ```bash
 python -m pip install esp-bmgr-assist==0.8.3
@@ -62,7 +64,7 @@ idf.py build
 
 `components/gen_bmgr_codes`, downloaded components, lock files and build outputs
 are intentionally omitted. Do not commit the manually copied board folder or
-generated sources. Example 07 requires none of these Board Manager steps.
+generated sources. Example 07 also requires these Board Manager steps.
 Unattended CI requires a published component containing this board; it reports
 a missing-board error until that component is available.
 

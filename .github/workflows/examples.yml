@@ -129,15 +129,13 @@ jobs:
           . "$IDF_PATH/export.sh"
           build_dir="$GITHUB_WORKSPACE/.ci-build/esp-idf/$EXAMPLE_SLUG-$FRAMEWORK_VERSION"
           idf.py --version
-          if [ "$EXAMPLE_SLUG" != "07_sd_card" ]; then
-            python -m pip install esp-bmgr-assist==0.8.3
-            idf.py -C "$EXAMPLE_PATH" bmgr -l
-            if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
-              echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
-              exit 1
-            fi
-            idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
+          python -m pip install esp-bmgr-assist==0.8.3
+          idf.py -C "$EXAMPLE_PATH" bmgr -l
+          if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
+            echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
+            exit 1
           fi
+          idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
           idf.py -C "$EXAMPLE_PATH" -B "$build_dir" set-target "$BUILD_TARGET" build
           if [ "$EXAMPLE_SLUG" = "09_comprehensive_demo" ]; then
             IDF_BUILD_DIR="$build_dir" python "$EXAMPLE_PATH/tests/test_nimble_observer_deinit.py"
@@ -213,14 +211,12 @@ jobs:
         run: |
           . "$IDF_PATH/export.sh"
           python -m pip install esp-bmgr-assist==0.8.3
-          if [ "$EXAMPLE_SLUG" != "07_sd_card" ]; then
-            idf.py -C "$EXAMPLE_PATH" bmgr -l
-            if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
-              echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
-              exit 1
-            fi
-            idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
+          idf.py -C "$EXAMPLE_PATH" bmgr -l
+          if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
+            echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
+            exit 1
           fi
+          idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
           build_dir="$GITHUB_WORKSPACE/.ci-build/experimental/$EXAMPLE_SLUG"
           idf.py -C "$EXAMPLE_PATH" -B "$build_dir" set-target "$BUILD_TARGET" build
           if [ "$EXAMPLE_SLUG" = "09_comprehensive_demo" ]; then

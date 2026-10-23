@@ -27,22 +27,9 @@ typedef struct {
     char line2[48];
 } app_test_result_t;
 
-typedef struct {
-    bool running;
-    uint32_t digest;
-    uint32_t error_count;
-    uint32_t iterations[2];
-    uint32_t internal_bytes;
-    uint32_t psram_bytes;
-    uint32_t internal_kib_s;
-    uint32_t psram_kib_s;
-    uint32_t uptime_ms;
-    uint32_t stack_low_watermark[2];
-} app_stress_status_t;
-
 typedef enum {
     ACTIVE_SELF_TEST = 0,
-    ACTIVE_STRESS,
+    ACTIVE_READY,
     LORA_TX,
     LORA_RX,
     PREPARE_SLEEP,
@@ -95,11 +82,6 @@ esp_err_t app_battery_prepare_sleep(void);
 esp_err_t app_buttons_start(QueueHandle_t events);
 esp_err_t app_buttons_stop(void);
 esp_err_t app_buttons_wait_released(void);
-
-esp_err_t app_stress_start(void);
-esp_err_t app_stress_stop(void);
-uint32_t app_stress_get_digest(void);
-void app_stress_get_status(app_stress_status_t *status);
 
 esp_err_t app_radio_service_start(QueueHandle_t events);
 esp_err_t app_radio_service_stop(void);

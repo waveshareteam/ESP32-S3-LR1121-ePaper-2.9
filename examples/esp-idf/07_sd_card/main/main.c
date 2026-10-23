@@ -8,8 +8,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "board_epaper.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "esp_board_manager.h"
+#include "esp_board_periph.h"
+#include "periph_gpio.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -17,14 +21,20 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdmmc_cmd.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "sd_card_test";
 
-#define SD_MOUNT_POINT    "/sdcard"
-#define SD_TEST_DIRECTORY SD_MOUNT_POINT "/waveshare_sd_test"
-#define SD_TEST_FILE      SD_TEST_DIRECTORY "/roundtrip.txt"
+/* ESP-IDF task stack sizes are bytes. Independent of a saved main-task config. */
+#define SD_TEST_TASK_STACK_BYTES (16U * 1024U)
 
-#define BOARD_SD_POWER_GPIO GPIO_NUM_38
+#define SD_MOUNT_POINT    "/sdcard"
+/* Keep both names within FAT 8.3 limits, including when long names are disabled. */
+#define SD_TEST_DIRECTORY SD_MOUNT_POINT "/ws_sd"
+#define SD_TEST_FILE      SD_TEST_DIRECTORY "/test.txt"
+
+#define BOARD_SD_POWER_PERIPH "gpio_epaper_power"
+static periph_gpio_handle_t *s_sd_power;
 #define BOARD_SD_CMD_GPIO   GPIO_NUM_10
 #define BOARD_SD_D0_GPIO    GPIO_NUM_11
 #define BOARD_SD_CLK_GPIO   GPIO_NUM_12
@@ -33,19 +43,41 @@ static const char TEST_PAYLOAD[] =
     "Waveshare ESP32-S3 SDMMC round-trip test\n"
     "Only this file is created and removed by example 07.\n";
 
+static bool s_display_ready;
+static esp_err_t s_display_result = ESP_OK;
+static char s_card_line[40] = "Card: not mounted";
+static const char *s_mount_line = "Mount: pending";
+static const char *s_io_line = "Read/write: pending";
+static const char *s_unmount_line = "Unmount: pending";
+
+static void show_status(const char *title)
+{
+    if (!s_display_ready || s_display_result != ESP_OK) {
+        return;
+    }
+    const char *lines[] = {s_card_line, s_mount_line, s_io_line, s_unmount_line};
+    s_display_result = board_epaper_show_lines(title, lines, 4, false);
+    if (s_display_result != ESP_OK) {
+        ESP_LOGE(TAG, "display refresh failed: %s; SD test continues on serial",
+                 esp_err_to_name(s_display_result));
+    }
+}
+
 static esp_err_t set_sd_power(bool enabled)
 {
-    const gpio_config_t config = {
-        .pin_bit_mask = 1ULL << BOARD_SD_POWER_GPIO,
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    ESP_RETURN_ON_ERROR(gpio_config(&config), TAG,
-                        "configure SD power GPIO failed");
-    ESP_RETURN_ON_ERROR(gpio_set_level(BOARD_SD_POWER_GPIO, enabled), TAG,
+    if (!s_sd_power) {
+        if (!enabled) {
+            return ESP_OK;
+        }
+        ESP_RETURN_ON_ERROR(esp_board_periph_ref_handle(
+                                BOARD_SD_POWER_PERIPH, (void **)&s_sd_power),
+                            TAG, "acquire SD power GPIO from Board Manager failed");
+    }
+    /* Keep this reference so the shared rail stays driven low after the test. */
+    ESP_RETURN_ON_ERROR(gpio_set_level(s_sd_power->gpio_num, enabled), TAG,
                         "set SD power GPIO failed");
+    ESP_LOGI(TAG, "Board Manager power: %s GPIO%d=%d",
+             BOARD_SD_POWER_PERIPH, (int)s_sd_power->gpio_num, enabled);
     if (enabled) {
         vTaskDelay(pdMS_TO_TICKS(100));
     }
@@ -168,14 +200,31 @@ cleanup:
     return result;
 }
 
-void app_main(void)
+static void run_sd_card_test(void)
 {
     sdmmc_card_t *card = NULL;
-    esp_err_t result = set_sd_power(true);
+    /* Display initialization must precede mounting: its rollback can cut power. */
+    esp_err_t result = esp_board_manager_prepare();
+    if (result == ESP_OK) {
+        s_display_result = board_epaper_start(NULL);
+        s_display_ready = s_display_result == ESP_OK;
+        if (!s_display_ready) {
+            ESP_LOGE(TAG, "display init failed: %s; SD test continues on serial",
+                     esp_err_to_name(s_display_result));
+        }
+        /* Restore the shared rail even if display initialization rolled back. */
+        result = set_sd_power(true);
+    }
     if (result != ESP_OK) {
+        board_epaper_deinit();
+        const esp_err_t power_result = set_sd_power(false);
+        if (power_result != ESP_OK) {
+            ESP_LOGE(TAG, "SD power rollback failed: %s", esp_err_to_name(power_result));
+        }
         ESP_LOGE(TAG, "FINAL: FAIL (%s)", esp_err_to_name(result));
         return;
     }
+    show_status("SD TEST");
 
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_DEFAULT;
@@ -201,15 +250,26 @@ void app_main(void)
     result = esp_vfs_fat_sdmmc_mount(SD_MOUNT_POINT, &host, &slot,
                                      &mount_config, &card);
     if (result != ESP_OK) {
+        s_mount_line = "Mount: FAIL (see serial)";
+        s_io_line = "Read/write: skipped";
+        s_unmount_line = "Unmount: not needed";
         ESP_LOGE(TAG, "mount failed without formatting: %s",
                  esp_err_to_name(result));
         goto power_off;
     }
 
     sdmmc_card_print_info(stdout, card);
+    snprintf(s_card_line, sizeof(s_card_line), "Card: %llu MiB",
+             (unsigned long long)card->csd.capacity * card->csd.sector_size / (1024ULL * 1024ULL));
+    s_mount_line = "Mount: OK (SDMMC 1-bit)";
+    s_io_line = "Read/write: running";
+    show_status("SD TEST");
     result = list_root_directory();
     if (result == ESP_OK) {
         result = run_roundtrip_test();
+        s_io_line = result == ESP_OK ? "Read/write: PASS" : "Read/write: FAIL";
+    } else {
+        s_io_line = "Root listing: FAIL";
     }
 
     {
@@ -217,19 +277,59 @@ void app_main(void)
             esp_vfs_fat_sdcard_unmount(SD_MOUNT_POINT, card);
         card = NULL;
         if (unmount_result != ESP_OK) {
+            s_unmount_line = "Unmount: FAIL";
             ESP_LOGE(TAG, "unmount failed: %s", esp_err_to_name(unmount_result));
             result = unmount_result;
         } else {
+            s_unmount_line = "Unmount: OK";
             ESP_LOGI(TAG, "filesystem synchronized and unmounted");
         }
     }
 
 power_off:
+    /* All filesystem work finishes before any display teardown can cut power. */
+    show_status(result == ESP_OK ? "SD PASS" : "SD FAIL");
+    if (s_display_ready) {
+        const esp_err_t sleep_result = board_epaper_sleep();
+        if (sleep_result != ESP_OK) {
+            s_display_result = sleep_result;
+        }
+    }
+    {
+        const esp_err_t display_cleanup_result = board_epaper_deinit();
+        if (display_cleanup_result != ESP_OK) {
+            s_display_result = display_cleanup_result;
+        }
+    }
     {
         const esp_err_t power_result = set_sd_power(false);
         if (power_result != ESP_OK) {
             result = power_result;
         }
     }
+    ESP_LOGI(TAG, "DISPLAY: %s (%s)", s_display_result == ESP_OK ? "PASS" : "FAIL",
+             esp_err_to_name(s_display_result));
     ESP_LOGI(TAG, "FINAL: %s", result == ESP_OK ? "PASS" : "FAIL");
+}
+
+static void sd_card_task(void *arg)
+{
+    (void)arg;
+    ESP_LOGI(TAG, "SD/display task stack: %u bytes", SD_TEST_TASK_STACK_BYTES);
+    run_sd_card_test();
+    ESP_LOGI(TAG, "SD/display minimum free stack: %u bytes",
+             (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+    vTaskDelete(NULL);
+}
+
+void app_main(void)
+{
+    /* Keep LVGL rendering off main even when an old sdkconfig keeps its small stack. */
+    ESP_LOGI(TAG, "main stack: %u bytes; starting dedicated SD/display task",
+             (unsigned int)CONFIG_ESP_MAIN_TASK_STACK_SIZE);
+    if (xTaskCreate(sd_card_task, "sd_card", SD_TEST_TASK_STACK_BYTES, NULL,
+                    tskIDLE_PRIORITY + 1, NULL) != pdPASS) {
+        /* Never fall back to rendering on main's smaller stack. */
+        ESP_LOGE(TAG, "FINAL: FAIL (cannot allocate SD/display task)");
+    }
 }

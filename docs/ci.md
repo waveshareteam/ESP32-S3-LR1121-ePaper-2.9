@@ -21,7 +21,8 @@ Board definitions are loaded only from the downloaded `waveshare/waveshare_board
 component. The downloaded 0.1.2 release does not contain this product yet; the
 Board Manager jobs fail with an explicit missing-board message until a component
 release includes it. Local manual board-folder copies are not supplied to CI.
-Example 07 uses SDMMC directly and does not require that board package.
+Example 07 also requires that board package and board-code generation for its
+shared power GPIO; its card operations use native SDMMC/FATFS.
 
 Manual dispatch accepts `all`, an example name, or a repository-relative
 example path. Bundled library examples are excluded.

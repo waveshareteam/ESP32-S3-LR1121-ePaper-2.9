@@ -45,7 +45,7 @@ def require_order(path, tokens, description):
 
 for state in (
     "ACTIVE_SELF_TEST",
-    "ACTIVE_STRESS",
+    "ACTIVE_READY",
     "LORA_TX",
     "LORA_RX",
     "PREPARE_SLEEP",
@@ -155,24 +155,13 @@ require_order(
 forbid("main/app_ble.c", "BLE_HOST_STOPPED",
        "NimBLE task self-delete must not leave unreachable completion code")
 
-for token in (
-    "exercise_cpu",
-    "exercise_memory",
-    "psa_hash_compute",
-    "memcmp(first, second",
-    "s_errors",
-    "stack_low_watermark",
-    "vTaskDelay",
-    "if (s_core0_task)",
-    "if (s_core1_task)",
-):
-    require("main/app_stress.c", token, "stress verification contract")
+for path in ("main/app_runtime.c", "main/CMakeLists.txt", "main/app_tests.h"):
+    forbid(path, "app_stress", "continuous stress testing is removed")
 
 require_order(
     "main/app_runtime.c",
     (
         "app_buttons_stop()",
-        "app_stress_stop()",
         "app_storage_stop()",
         "app_battery_monitor_stop()",
         "app_ble_stop()",
@@ -426,7 +415,7 @@ require_order(
     "destroy SensorLib I2C device before releasing the Board Manager bus",
 )
 
-for path in ("main/app_stress.c", "main/test_system.c"):
+for path in ("main/test_system.c",):
     require(path, '#include "psa/crypto.h"', "ESP-IDF 6.2 crypto API")
     forbid(path, '#include "mbedtls/sha256.h"',
            "removed ESP-IDF 6.2 public SHA header")
@@ -496,4 +485,4 @@ if FAILURES:
     sys.exit(1)
 
 print("SOURCE CONTRACT CHECK: PASS")
-print("Validated state, button, radio, Wi-Fi/BLE, stress, SD, SensorLib AXP2602, e-paper and sleep contracts.")
+print("Validated state, button, radio, Wi-Fi/BLE, SD, SensorLib AXP2602, e-paper and sleep contracts.")

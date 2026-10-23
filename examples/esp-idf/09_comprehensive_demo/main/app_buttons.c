@@ -175,10 +175,7 @@ esp_err_t app_buttons_start(QueueHandle_t events)
         goto fail;
     }
 
-    ret = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        goto fail;
-    }
+    /* board_support_prepare() owns the shared GPIO ISR service. */
     ret = gpio_isr_handler_add(BOARD_BUTTON_SLEEP_GPIO, button_isr, NULL);
     if (ret != ESP_OK) {
         goto fail;

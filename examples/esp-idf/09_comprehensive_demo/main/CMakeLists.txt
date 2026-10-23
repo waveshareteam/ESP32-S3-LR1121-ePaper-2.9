@@ -4,7 +4,6 @@
         "app_runtime.c"
         "app_ui.c"
         "app_buttons.c"
-        "app_stress.c"
         "app_wifi.c"
         "app_ble.c"
         "app_radio_service.c"

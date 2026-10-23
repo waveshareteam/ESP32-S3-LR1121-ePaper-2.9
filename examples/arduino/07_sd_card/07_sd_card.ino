@@ -2,6 +2,7 @@
 #include <SD_MMC.h>
 #include <cstring>
 #include <WaveshareBoard.h>
+#include <WaveshareEPaper.h>
 
 using waveshare::Pins;
 using waveshare::setSharedPower;
@@ -12,6 +13,34 @@ constexpr char kTestFile[] = "/waveshare_sd_test/roundtrip.txt";
 constexpr char kPayload[] =
     "Waveshare ESP32-S3 SDMMC round-trip test\n"
     "Only this file is created and removed by example 07.\n";
+
+waveshare::Epaper display;
+bool displayReady = false;
+bool displayPassed = true;
+char cardLine[40] = "Card: not mounted";
+const char *mountLine = "Mount: pending";
+const char *ioLine = "Read/write: pending";
+const char *unmountLine = "Unmount: pending";
+
+void showStatus(const char *title) {
+  if (!displayReady || !displayPassed) return;
+  const char *lines[] = {cardLine, mountLine, ioLine, unmountLine};
+  displayPassed = display.showLines(title, lines, 4);
+  if (!displayPassed) {
+    Serial.printf("ERROR: display refresh failed: %s; SD test continues on serial\n",
+                  display.lastError());
+  }
+}
+
+// Call only after SD_MMC.end(), or when mounting was never successful.
+void finishTest(bool passed) {
+  showStatus(passed ? "SD PASS" : "SD FAIL");
+  if (displayReady && !display.sleep(false)) displayPassed = false;
+  SPI.end();
+  setSharedPower(false);
+  Serial.printf("DISPLAY: %s\n", displayPassed ? "PASS" : "FAIL");
+  Serial.printf("FINAL: %s\n", passed ? "PASS" : "FAIL");
+}
 
 const char *cardTypeName(uint8_t type) {
   switch (type) {
@@ -129,38 +158,65 @@ void setup() {
   delay(1000);
   Serial.println("\nWaveshare SD card test");
 
-  setSharedPower(true);
+  waveshare::beginBoard(false, true);
+  displayReady = display.begin();
+  displayPassed = displayReady;
+  if (!displayReady) {
+    Serial.printf("ERROR: display init failed: %s; SD test continues on serial\n",
+                  display.lastError());
+  }
+  showStatus("SD TEST");
   if (!SD_MMC.setPins(Pins::kSdClk, Pins::kSdCmd, Pins::kSdD0)) {
-    Serial.println("FINAL: FAIL (SDMMC pin setup)");
-    setSharedPower(false);
+    Serial.println("ERROR: SDMMC pin setup failed");
+    mountLine = "Mount: pin setup FAIL";
+    ioLine = "Read/write: skipped";
+    unmountLine = "Unmount: not needed";
+    finishTest(false);
     return;
   }
 
   Serial.printf("Mounting FAT card with SDMMC 1-bit: CMD=%u D0=%u CLK=%u\n",
                 Pins::kSdCmd, Pins::kSdD0, Pins::kSdClk);
   if (!SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_DEFAULT, 5)) {
-    Serial.println("FINAL: FAIL (mount failed; card was not formatted)");
-    setSharedPower(false);
+    Serial.println("ERROR: mount failed; card was not formatted");
+    mountLine = "Mount: FAIL (see serial)";
+    ioLine = "Read/write: skipped";
+    unmountLine = "Unmount: not needed";
+    finishTest(false);
     return;
   }
 
   const uint8_t type = SD_MMC.cardType();
   bool passed = type != CARD_NONE;
   if (passed) {
+    snprintf(cardLine, sizeof(cardLine), "Card: %llu MiB",
+             static_cast<unsigned long long>(SD_MMC.cardSize() / (1024ULL * 1024ULL)));
+    mountLine = "Mount: OK (SDMMC 1-bit)";
+    ioLine = "Read/write: running";
+    showStatus("SD TEST");
     Serial.printf("Card: %s, size=%llu MiB, total=%llu MiB, used=%llu MiB\n",
                   cardTypeName(type),
                   static_cast<unsigned long long>(SD_MMC.cardSize() / (1024ULL * 1024ULL)),
                   static_cast<unsigned long long>(SD_MMC.totalBytes() / (1024ULL * 1024ULL)),
                   static_cast<unsigned long long>(SD_MMC.usedBytes() / (1024ULL * 1024ULL)));
-    passed = listRootDirectory() && runRoundTripTest();
+    passed = listRootDirectory();
+    if (passed) {
+      passed = runRoundTripTest();
+      ioLine = passed ? "Read/write: PASS" : "Read/write: FAIL";
+    } else {
+      ioLine = "Root listing: FAIL";
+    }
   } else {
     Serial.println("ERROR: no SD card detected");
+    mountLine = "Mount: no card";
+    ioLine = "Read/write: skipped";
   }
 
   SD_MMC.end();
+  // Arduino's end() has no return value; do not claim checked unmount success.
+  unmountLine = "Unmount: done";
   Serial.println("Filesystem synchronized and unmounted");
-  setSharedPower(false);
-  Serial.printf("FINAL: %s\n", passed ? "PASS" : "FAIL");
+  finishTest(passed);
 }
 
 void loop() {
