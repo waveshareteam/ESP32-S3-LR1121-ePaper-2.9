@@ -94,6 +94,7 @@ typedef struct {
 typedef struct {
     int host;                   // SPI host (SPI2_HOST, SPI3_HOST)
     int speed_hz;               // Clock speed
+    bool external_bus;          // Bus already initialized/owned by the caller
 } epd_spi_config_t;
 
 // Panel configuration

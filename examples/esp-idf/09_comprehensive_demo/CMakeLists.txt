@@ -11,3 +11,6 @@ project(09_comprehensive_demo)
 
 include(cmake/nimble_observer_deinit.cmake)
 fix_nimble_observer_deinit()
+
+include(cmake/sensorlib_temperature.cmake)
+fix_sensorlib_temperature()

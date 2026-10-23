@@ -42,8 +42,8 @@ static const char *state_name(app_runtime_state_t state)
     switch (state) {
     case ACTIVE_SELF_TEST:
         return "ACTIVE_SELF_TEST";
-    case ACTIVE_STRESS:
-        return "ACTIVE_STRESS";
+    case ACTIVE_READY:
+        return "ACTIVE_READY";
     case LORA_TX:
         return "LORA_TX";
     case LORA_RX:
@@ -165,8 +165,6 @@ static esp_err_t start_active_services(void)
                    app_battery_monitor_start(), &first_error);
     remember_error("button service start",
                    app_buttons_start(s_events), &first_error);
-    remember_error("dual-core stress start",
-                   app_stress_start(), &first_error);
     remember_error("LR1121 RX service start",
                    app_radio_service_start(s_events), &first_error);
     return first_error;
@@ -175,9 +173,7 @@ static esp_err_t start_active_services(void)
 static void report_runtime(bool refresh_epaper)
 {
     board_radio_status_t radio = {0};
-    app_stress_status_t stress = {0};
     (void)app_radio_service_get_status(&radio);
-    app_stress_get_status(&stress);
 
     const char *wifi_status =
         app_wifi_sta_connected()
@@ -196,18 +192,9 @@ static void report_runtime(bool refresh_epaper)
              state_name(s_state), radio.tx_count, radio.tx_fail_count,
              radio.rx_count, radio.rx_error_count,
              wifi_status, (unsigned)ap_clients, ble_status, ble_scans);
-    ESP_LOGI(TAG,
-             "stress=%s core0=%" PRIu32 " core1=%" PRIu32
-             " digest=%08" PRIX32 " errors=%" PRIu32
-             " RAM=%" PRIu32 "KiB/s PSRAM=%" PRIu32
-             "KiB/s stack=%" PRIu32 "/%" PRIu32
-             " heap=%" PRIu32,
-             stress.running ? "RUNNING" : "STOPPED",
-             stress.iterations[0], stress.iterations[1], stress.digest,
-             stress.error_count, stress.internal_kib_s,
-             stress.psram_kib_s, stress.stack_low_watermark[0],
-             stress.stack_low_watermark[1],
-             heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+    ESP_LOGI(TAG, "heap internal=%u PSRAM=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
 
     if (refresh_epaper) {
         const esp_err_t ret = app_ui_show_runtime(
@@ -228,7 +215,6 @@ static void report_runtime(bool refresh_epaper)
 static void cleanup_partial_active_state(void)
 {
     (void)app_buttons_stop();
-    (void)app_stress_stop();
     (void)app_storage_stop();
     (void)app_battery_monitor_stop();
     (void)app_ble_stop();
@@ -285,7 +271,6 @@ static bool stop_active_services(void)
 {
     esp_err_t first_error = ESP_OK;
     remember_error("button task stop", app_buttons_stop(), &first_error);
-    remember_error("CPU/RAM stress stop", app_stress_stop(), &first_error);
     remember_error("SD sync/unmount", app_storage_stop(), &first_error);
     remember_error("battery monitor stop",
                    app_battery_monitor_stop(), &first_error);
@@ -400,21 +385,21 @@ static void runtime_task(void *arg)
                     ESP_LOGW(TAG, "self-test task allocation failed; running synchronously");
                     show_self_test_summary(run_self_test());
                     (void)start_active_services();
-                    set_state(ACTIVE_STRESS);
+                    set_state(ACTIVE_READY);
                     continue;
                 }
             }
 
-            /* Buttons/radios/stress start only after the worker releases the hardware. */
+            /* Buttons/radios start only after the worker releases the hardware. */
             app_runtime_event_t event = {0};
             if (xQueueReceive(s_events, &event, pdMS_TO_TICKS(100)) == pdTRUE &&
                 event.type == APP_EVENT_SELF_TEST_DONE) {
                 s_self_test_running = false;
                 show_self_test_summary(event.result);
                 (void)start_active_services();
-                set_state(ACTIVE_STRESS);
+                set_state(ACTIVE_READY);
             }
-        } else if (s_state == ACTIVE_STRESS) {
+        } else if (s_state == ACTIVE_READY) {
             report_runtime(true);
             set_state(LORA_RX);
             next_uart = xTaskGetTickCount() +

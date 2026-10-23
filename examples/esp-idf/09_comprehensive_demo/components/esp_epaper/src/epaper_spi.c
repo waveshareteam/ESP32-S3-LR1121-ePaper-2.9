@@ -48,10 +48,13 @@ esp_err_t epd_spi_init(epd_spi_t *spi, const epd_pin_config_t *pins, const epd_s
         .max_transfer_sz = SPI_MAX_CHUNK_SIZE,  // Match chunk size
     };
     
-    esp_err_t ret = spi_bus_initialize(spi_cfg->host, &buscfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        ESP_LOGE(TAG, "SPI bus init failed: %s", esp_err_to_name(ret));
-        return ret;
+    esp_err_t ret = ESP_OK;
+    if (!spi_cfg->external_bus) {
+        ret = spi_bus_initialize(spi_cfg->host, &buscfg, SPI_DMA_CH_AUTO);
+        if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+            ESP_LOGE(TAG, "SPI bus init failed: %s", esp_err_to_name(ret));
+            return ret;
+        }
     }
     
     // Add SPI device

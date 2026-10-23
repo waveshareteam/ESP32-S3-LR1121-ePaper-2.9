@@ -34,8 +34,7 @@ public:
                    gpio_num_t mosi, uint32_t speed_hz, gpio_num_t nss)
         : RadioLibHal(INPUT, OUTPUT, LOW, HIGH, RISING, FALLING),
           spi_host(host), spi_sck(sck), spi_miso(miso), spi_mosi(mosi),
-          spi_speed_hz(speed_hz), radio_nss(nss), spi(nullptr),
-          isr_service_installed(false) {}
+          spi_speed_hz(speed_hz), radio_nss(nss), spi(nullptr) {}
 
     void init() override {
         spiBegin();
@@ -94,14 +93,7 @@ public:
             return;
         }
 
-        if (!isr_service_installed) {
-            ret = gpio_install_isr_service(0);
-            if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-                ESP_LOGE(TAG, "install GPIO ISR service failed: %s", esp_err_to_name(ret));
-                return;
-            }
-            isr_service_installed = true;
-        }
+        /* board_support_prepare() owns the shared GPIO ISR service. */
 
         if (interrupt_slot.callback != nullptr) {
             if (interrupt_slot.pin != pin) {
@@ -265,7 +257,6 @@ private:
     uint32_t spi_speed_hz;
     gpio_num_t radio_nss;
     spi_device_handle_t spi;
-    bool isr_service_installed;
     InterruptSlot interrupt_slot = {RADIOLIB_NC, nullptr};
 };
 

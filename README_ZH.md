@@ -59,9 +59,12 @@ LoRaWAN 示例使用占位凭据。启用射频通信前必须按部署地区确
 ## CI 与 Releases
 
 GitHub Actions 工作流会动态发现直接位于示例目录下的一方项目，当前
-配置矩阵为 ESP-IDF v5.5.5、ESP-IDF v6.0.2 和 Arduino-ESP32 3.3.11。
-ESP-IDF 09 综合示例需要 6.2 开发版本 API，不在当前稳定版矩阵支持范围内；
-合并前需要单独确定它的 CI 版本策略。成功构建后，工作流计划生成可直接烧录的 ZIP，其中包含 manifest、
+稳定版矩阵为 ESP-IDF v5.5.6 和 Arduino-ESP32 3.3.11，另设固定到 SDK
+提交 `08e0d30a` 的 ESP-IDF 6.2 开发版兼容任务。全部 13 个 ESP-IDF 示例
+（含 09 综合示例）均支持 5.5 和 6.2 验证环境，详见[版本兼容说明](docs/idf-compatibility.md)。
+板型由 `waveshare/waveshare_boards` 提供；组件发布该板型前，需按
+[板型准备说明](examples/esp-idf/README.md#board-manager-integration)手动复制到下载组件中。
+稳定版成功构建后，工作流生成可直接烧录的 ZIP，其中包含 manifest、
 SHA-256 校验值、原始分段、合并固件以及 Windows/POSIX 烧录脚本。
 推送 `v*` 标签时，工作流计划将这些包发布到 GitHub Releases。
 

@@ -12,7 +12,7 @@ and uses its native `led_strip` handle for color updates.
 | `04_bat_axp2602` | AXP2602 battery-gauge data |
 | `05_rtc_pcf85063` | PCF85063A RTC and interrupt test |
 | `06_lr1121_pingpong` | LR1121 ping-pong test |
-| `07_sd_card` | microSD 1-bit SDMMC mount, card info, file write/read/cleanup test |
+| `07_sd_card` | microSD 1-bit SDMMC mount, file write/read/cleanup test, e-paper status |
 | `08_deep_sleep` | Deep-sleep and wake-up test |
 | `09_comprehensive_demo` | Combined board test |
 | `10_lr1121_lorawan` | LR1121 LoRaWAN Class A OTAA example |
@@ -22,33 +22,57 @@ and uses its native `led_strip` handle for color updates.
 
 ## Board Manager integration
 
-Examples 01–06 and 08–13 depend on `waveshare/waveshare_boards`, which
-brings in `espressif/esp_board_manager` transitively. Example 07 uses SDMMC
-and FATFS directly. Install the bootstrap helper in the active IDF environment:
+All examples 01–13 depend on `waveshare/waveshare_boards`, which brings in
+`espressif/esp_board_manager` transitively. Example 07 uses Board Manager for
+the shared power GPIO, SPI bus, and e-paper configuration, and native SDMMC/FATFS
+for card operations. Install the
+bootstrap helper in the active IDF environment:
 
 ```bash
 python -m pip install esp-bmgr-assist==0.8.3
 ```
 
 From the example directory, `idf.py bmgr -l` downloads dependencies and lists
-registry boards without a preceding `idf.py reconfigure`. The published
-Waveshare 0.1.2 package does not include this e-paper product. Its source board
-definition is included in `boards/esp32_s3_lr1121_epaper_2_9`; list and select it:
+registry boards without a preceding `idf.py reconfigure`:
 
 ```bash
-idf.py bmgr -l -c ../boards
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../boards
+idf.py bmgr -l
+```
+
+Board definitions belong to `waveshare/waveshare_boards`; this repository does
+not include a `boards` directory or another local copy. The downloaded 0.1.2
+package does not contain `esp32_s3_lr1121_epaper_2_9` yet. Until a component
+release includes it, manually copy the matching board folder supplied by the
+board-package maintainer into this example's downloaded component:
+
+```text
+managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/
+```
+
+The folder must include `board_info.yaml`, `board_peripherals.yaml`, and
+`board_devices.yaml`. Repeat this local preparation for each example that uses
+Board Manager, and after deleting or replacing downloaded components. Once the
+published component includes the board, this manual step is unnecessary.
+
+Then list and select the board from the component and build:
+
+```bash
+idf.py bmgr -l
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py build
 ```
 
 `components/gen_bmgr_codes`, downloaded components, lock files and build outputs
-are intentionally omitted. Generate board code before building a fresh checkout.
-Do not edit files inside `managed_components` to add the product board.
+are intentionally omitted. Do not commit the manually copied board folder or
+generated sources. Example 07 also requires these Board Manager steps.
+Unattended CI requires a published component containing this board; it reports
+a missing-board error until that component is available.
 
-Most examples require IDF >=5.4.3, example 07 requires >=5.5.0, and example 09
-currently requires >=6.2.0,<6.3.0. The installed 6.2 development environment was
-used for the earlier comprehensive-demo test; the stable CI matrix does not
-cover that project. See the manual handoff for validation boundaries.
+All 13 examples declare IDF >=5.5.0,<6.3.0 and target ESP32-S3. Use the stable
+5.5 toolchain for the user manual; 6.2 compatibility is checked against a pinned
+development SDK rather than a floating master branch. See
+[framework compatibility](../../docs/idf-compatibility.md) for exact versions,
+build results and the separate experimental CI job.
 
 Board Manager owns buses, GPIOs, power control and the native WS2812/RMT device.
 Examples carry their own support/display/font components; changes to common
@@ -103,10 +127,12 @@ and run `idf.py fullclean` followed by `idf.py build`.
 
 ## Regenerating board code
 
-Regenerate after changing YAML under `boards/` or after cleaning the generated
-component. Run the selection command above from each affected example directory.
+Regenerate after updating the board definition in the downloaded component or
+after cleaning the generated component. Run the selection command above from
+each affected example directory.
 The generator can replace `sdkconfig`, so preserve deliberate configuration
-changes first. Generated files stay local; commit the board YAML instead.
+changes first. Generated files and manually supplied board YAML stay local.
+Maintain board-definition changes in the separate board-package repository.
 
 ## Hardware checks
 

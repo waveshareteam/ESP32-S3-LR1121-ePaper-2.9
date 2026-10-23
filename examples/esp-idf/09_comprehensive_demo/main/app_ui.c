@@ -39,8 +39,8 @@ static const char *runtime_state_label(const char *state)
     if (strcmp(state, "ACTIVE_SELF_TEST") == 0) {
         return "SELF TEST";
     }
-    if (strcmp(state, "ACTIVE_STRESS") == 0) {
-        return "STRESS";
+    if (strcmp(state, "ACTIVE_READY") == 0) {
+        return "READY";
     }
     if (strcmp(state, "PREPARE_SLEEP") == 0) {
         return "SLEEP PREP";

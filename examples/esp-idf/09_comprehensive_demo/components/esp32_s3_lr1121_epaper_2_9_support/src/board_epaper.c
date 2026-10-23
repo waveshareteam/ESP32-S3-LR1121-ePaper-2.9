@@ -53,6 +53,7 @@ static esp_err_t board_epaper_create_panel(epd_handle_t *panel)
         .spi = {
             .host = hw.spi_host,
             .speed_hz = hw.spi_speed_hz,
+            .external_bus = true, /* board_spi_lock() references Board Manager SPI. */
         },
         .panel = {
             .type = EPD_PANEL_SSD16XX_290,
@@ -258,6 +259,13 @@ static void board_epaper_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area
 static esp_err_t board_epaper_lvgl_init_once(void)
 {
     if (!s_lvgl_inited) {
+#if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
+        ESP_LOGW(TAG, "LVGL fixed internal pool=%u bytes; use menuconfig: LVGL -> Memory and Standard Library -> Malloc functions source -> C standard library",
+                 (unsigned)LV_MEM_SIZE);
+#else
+        ESP_LOGI(TAG, "LVGL allocator=%d (C library=%d); no fixed internal pool",
+                 LV_USE_STDLIB_MALLOC, LV_STDLIB_CLIB);
+#endif
         lv_init();
         s_lvgl_inited = true;
     }
@@ -347,9 +355,10 @@ esp_err_t board_epaper_start(board_epaper_t *out_panel)
     uint32_t logical_h = s_panel.info.width;
     uint32_t lvgl_buf_size = logical_w * BOARD_EPAPER_RENDER_LINES * sizeof(uint16_t);
 
-    s_lvgl_buf = heap_caps_malloc(lvgl_buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    /* CPU-only RGB565 conversion; SPI transfers use the separate EPD buffer. */
+    s_lvgl_buf = heap_caps_malloc(lvgl_buf_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!s_lvgl_buf) {
-        s_lvgl_buf = malloc(lvgl_buf_size);
+        s_lvgl_buf = heap_caps_malloc(lvgl_buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }
     if (!s_lvgl_buf) {
         ret = ESP_ERR_NO_MEM;

@@ -155,17 +155,17 @@ RadioLib 的 session 缓冲区不仅包含帧计数器和 RX 参数，也包含 
 
 ## 构建、烧录和监视
 
-首次配置需要 ESP-IDF Component Manager 解析 `main/idf_component.yml` 中的 RadioLib 7.7.1、Board Manager 0.6.1 和本地板定义。不要把 `build/` 或 `managed_components/` 从其他示例复制进来。
+先按[板型准备说明](../README.md#board-manager-integration)下载组件，并在组件尚未发布此板型期间手动补入对应板型目录。Board Manager 由 `waveshare/waveshare_boards` 间接提供，本仓库不保存板型副本。
 
-本示例不提交 `dependencies.lock`：ESP-IDF 5.5.2 自带的 Component Manager 2.4.2 会把本地 `path` 依赖写成当前机器的绝对路径，锁文件因而不可移植。`.gitignore` 已忽略该文件；Component Manager 会在本机解析时重新生成它。RadioLib、Board Manager、LVGL、LED、RTC 等直接依赖已在 manifest 中固定到本次验证版本。
+本示例不提交 `dependencies.lock`、下载组件或 `components/gen_bmgr_codes`；Component Manager 和 Board Manager 在本机重新生成所需文件。
 
-Windows PowerShell 或已导出 ESP-IDF 环境的 Ubuntu Bash 均使用相同的工程命令：
+Windows PowerShell 或已加载 ESP-IDF 环境的 Ubuntu Bash 均可在本示例目录执行：
 
 ```text
-idf.py -C 11_LoRaWAN_ABP set-target esp32s3
-idf.py -C 11_LoRaWAN_ABP reconfigure
-idf.py -C 11_LoRaWAN_ABP build
-idf.py -C 11_LoRaWAN_ABP -p PORT flash monitor
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
+idf.py set-target esp32s3
+idf.py build
+idf.py -p PORT flash monitor
 ```
 
 将 `PORT` 替换为设备串口。退出监视器使用 `Ctrl+]`。占位凭据不会阻止编译，只会在运行时阻止无线发送。

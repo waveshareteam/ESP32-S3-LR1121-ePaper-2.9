@@ -30,6 +30,8 @@ typedef struct {
 
 static const char *TAG = "board_support";
 static bool s_ops_registered;
+/* Process-wide service: keep it across device teardown/reinitialization. */
+static bool s_gpio_isr_service_ready;
 static bool s_epaper_power_enabled;
 static i2c_master_bus_handle_t s_i2c_bus;
 static dev_led_strip_handles_t *s_status_led;
@@ -343,10 +345,7 @@ static int rtc_device_init(void *raw_config, int config_size, void **device_hand
     if (ret != ESP_OK) {
         goto fail;
     }
-    ret = gpio_install_isr_service(0);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        goto fail;
-    }
+    /* board_support_prepare() owns the shared GPIO ISR service. */
     ret = gpio_isr_handler_add(handle->int_gpio, rtc_interrupt_handler, handle);
     if (ret != ESP_OK) {
         goto fail;
@@ -423,7 +422,15 @@ esp_err_t board_support_prepare(void)
                         ESP_ERR_TIMEOUT, TAG, "lock board support init failed");
 
     esp_err_t ret = ESP_OK;
-    if (!s_ops_registered) {
+    if (!s_gpio_isr_service_ready) {
+        /* All device handlers share this service; flags=0 matches RTC/LoRa. */
+        ret = gpio_install_isr_service(0);
+        if (ret == ESP_OK || ret == ESP_ERR_INVALID_STATE) {
+            s_gpio_isr_service_ready = true;
+            ret = ESP_OK;
+        }
+    }
+    if (ret == ESP_OK && !s_ops_registered) {
         ret = esp_board_device_set_ops(BOARD_DEVICE_RTC,
                                        rtc_device_init, rtc_device_deinit);
         if (ret == ESP_OK) {

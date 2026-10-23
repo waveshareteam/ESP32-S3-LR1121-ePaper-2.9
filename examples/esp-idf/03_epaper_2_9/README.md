@@ -5,18 +5,19 @@ FAST 的刷新策略。默认使用黑白文字界面。
 
 ## 构建与运行
 
-Ubuntu Bash（先加载 ESP-IDF 环境，并进入本示例目录）：
+先按[板型准备说明](../README.md#board-manager-integration)下载组件并补入板型。
+Ubuntu Bash（已加载 ESP-IDF 环境，并进入本示例目录）：
 
 ```bash
 python -m pip install esp-bmgr-assist==0.8.3
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../boards
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py menuconfig
 idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
 
-串口设备需按实际连接替换。板型源文件位于 `../boards/`，生成的
-`components/gen_bmgr_codes/` 不提交到仓库。
+串口设备需按实际连接替换。板型从下载的 `waveshare/waveshare_boards` 组件读取；
+组件内手动补入的板型和生成的 `components/gen_bmgr_codes/` 均不提交。
 
 ## 显示模式
 

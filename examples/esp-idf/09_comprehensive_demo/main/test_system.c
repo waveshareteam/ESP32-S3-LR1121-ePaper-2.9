@@ -25,6 +25,9 @@ static const char *TAG = "system_test";
 #define INTERNAL_TEST_BYTES (64U * 1024U)
 #define PSRAM_TEST_BYTES     (1024U * 1024U)
 #define FLASH_CHUNK_BYTES    (16U * 1024U)
+#define MEMORY_TEST_MIN      (4U * 1024U)
+#define MEMORY_TEST_RESERVE  (48U * 1024U)
+#define MEMORY_TEST_MARGIN   1024U
 
 typedef struct {
     bool tested;
@@ -44,31 +47,49 @@ static uint8_t memory_pattern(size_t index)
 
 static memory_test_result_t memory_test(uint32_t caps, size_t requested)
 {
-    memory_test_result_t result = {
-        .tested = true,
-        .bytes = (uint32_t)requested,
-    };
-    uint8_t *buffer = heap_caps_malloc(requested, caps);
+    memory_test_result_t result = {0};
+    const size_t free_bytes = heap_caps_get_free_size(caps);
+    const size_t largest = heap_caps_get_largest_free_block(caps);
+    const size_t reserve = MEMORY_TEST_RESERVE + MEMORY_TEST_MARGIN;
+    size_t bytes = free_bytes > reserve ? free_bytes - reserve : 0;
+    if (bytes > requested) bytes = requested;
+    if (bytes > largest) bytes = largest;
+    bytes &= ~(size_t)255U;
+    uint8_t *buffer = NULL;
+    while (bytes >= MEMORY_TEST_MIN) {
+        buffer = heap_caps_malloc(bytes, caps);
+        if (buffer) break;
+        if (bytes == MEMORY_TEST_MIN) break;
+        bytes = (bytes / 2U) & ~(size_t)255U;
+        if (bytes < MEMORY_TEST_MIN) bytes = MEMORY_TEST_MIN;
+    }
     if (!buffer) {
+        ESP_LOGE(TAG, "memory test NOT_TESTED: caps=0x%x requested=%u free=%u largest=%u",
+                 (unsigned)caps, (unsigned)requested,
+                 (unsigned)free_bytes, (unsigned)largest);
         return result;
     }
+    result.tested = true;
+    result.bytes = (uint32_t)bytes;
+    ESP_LOGI(TAG, "memory test: caps=0x%x requested=%u actual=%u",
+             (unsigned)caps, (unsigned)requested, (unsigned)bytes);
 
     const int64_t start = esp_timer_get_time();
-    for (size_t i = 0; i < requested; ++i) {
+    for (size_t i = 0; i < bytes; ++i) {
         buffer[i] = memory_pattern(i);
     }
     bool valid = true;
-    for (size_t i = 0; i < requested; ++i) {
+    for (size_t i = 0; i < bytes; ++i) {
         if (buffer[i] != memory_pattern(i)) {
             valid = false;
             break;
         }
     }
-    result.crc = esp_crc32_le(0, buffer, requested);
+    result.crc = esp_crc32_le(0, buffer, bytes);
     const int64_t elapsed_us = esp_timer_get_time() - start;
     if (elapsed_us > 0) {
         result.throughput_kib_s = (uint32_t)(
-            ((uint64_t)requested * 2U * 1000000U) /
+            ((uint64_t)bytes * 2U * 1000000U) /
             ((uint64_t)elapsed_us * 1024U));
     }
     result.passed = valid;
@@ -286,7 +307,8 @@ esp_err_t test_system_run(app_test_result_t *result)
     ESP_LOGI(TAG,
              "RAM=%s bytes=%" PRIu32 " crc=%08" PRIX32 " throughput=%" PRIu32
              "KiB/s",
-             internal.passed ? "PASS" : "FAIL", internal.bytes,
+             !internal.tested ? "NOT_TESTED" : (internal.passed ? "PASS" : "FAIL"),
+             internal.bytes,
              internal.crc, internal.throughput_kib_s);
     ESP_LOGI(TAG,
              "PSRAM=%s bytes=%" PRIu32 " crc=%08" PRIX32 " throughput=%" PRIu32

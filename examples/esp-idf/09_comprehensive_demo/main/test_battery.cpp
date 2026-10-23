@@ -20,6 +20,8 @@ static const char *TAG = "battery_test";
 
 #define BATTERY_TASK_DONE      BIT0
 #define BATTERY_POLL_PERIOD_MS 30000U
+#define BATTERY_ADC_RETRY_MS   50U
+#define BATTERY_ADC_ATTEMPTS   10U
 #define AXP2602_CHARGE_GPIO    GPIO_NUM_47
 #define AXP2602_IRQ_GPIO       GPIO_NUM_48
 #define AXP2602_IRQ_LOW_SOC    (1U << 0)
@@ -45,6 +47,23 @@ static const char *battery_state_label(float current_ma)
     return "IDLE";
 }
 
+static esp_err_t wait_battery_adc(GaugeAXP2602 &battery)
+{
+    /* Datasheet tADCON is 32 ms. Wait after enable/wake, then bound retries. */
+    for (unsigned attempt = 0; attempt < BATTERY_ADC_ATTEMPTS; ++attempt) {
+        vTaskDelay(pdMS_TO_TICKS(BATTERY_ADC_RETRY_MS));
+        if (!battery.refresh()) {
+            return ESP_FAIL;
+        }
+        if (isfinite(battery.getThermalDieTemperature())) {
+            return ESP_OK;
+        }
+    }
+    ESP_LOGE(TAG, "AXP2602 temperature unavailable after ADC wait: raw=%u",
+             (unsigned)battery.getThermalDieTemperatureRaw());
+    return ESP_ERR_TIMEOUT;
+}
+
 static esp_err_t init_battery_gauge(void)
 {
     if (s_battery) {
@@ -53,6 +72,7 @@ static esp_err_t init_battery_gauge(void)
             if (s_battery->isSleepModeEnabled()) {
                 return ESP_FAIL;
             }
+            return wait_battery_adc(*s_battery);
         }
         return ESP_OK;
     }
@@ -76,8 +96,9 @@ static esp_err_t init_battery_gauge(void)
     battery->setCurrentMeasurement(true);
     battery->setThermalDieMeasurement(true);
     battery->setOperatingMode(GaugeAXP2602::OPERATING_MODE_NORMAL);
-    if (!battery->refresh()) {
-        return ESP_FAIL;
+    ret = wait_battery_adc(*battery);
+    if (ret != ESP_OK) {
+        return ret;
     }
     s_battery = std::move(battery);
     return ESP_OK;
@@ -111,6 +132,11 @@ esp_err_t test_battery_run(app_test_result_t *result)
     if (!s_battery->refresh()) {
         app_result_set(result, "BAT", APP_TEST_FAIL,
                        "AXP2602 read fail", "SensorLib refresh");
+        return ESP_FAIL;
+    }
+    if (!isfinite(s_battery->getThermalDieTemperature())) {
+        app_result_set(result, "BAT", APP_TEST_FAIL,
+                       "AXP2602 temp invalid", "Check ADC / battery");
         return ESP_FAIL;
     }
     const uint16_t voltage_mv = s_battery->getVoltage();
@@ -172,10 +198,17 @@ static void log_battery_sample(void)
     const float current_ma = s_battery->getCurrent();
     const uint8_t state_of_charge = s_battery->getStateOfCharge();
     const float temperature_c = s_battery->getThermalDieTemperature();
+    char temperature_text[24];
+    if (isfinite(temperature_c)) {
+        snprintf(temperature_text, sizeof(temperature_text), "%.1fC", (double)temperature_c);
+    } else {
+        snprintf(temperature_text, sizeof(temperature_text), "UNAVAILABLE");
+    }
     ESP_LOGI(TAG,
-             "BAT %" PRIu16 "mV %+.2fmA SOC=%u%% temp=%.1fC state=%s GPIO47=%d GPIO48=%d",
+             "BAT %" PRIu16 "mV %+.2fmA SOC=%u%% temp=%s raw=%u state=%s GPIO47=%d GPIO48=%d",
              voltage_mv, (double)current_ma, state_of_charge,
-             (double)temperature_c, battery_state_label(current_ma),
+             temperature_text, (unsigned)s_battery->getThermalDieTemperatureRaw(),
+             battery_state_label(current_ma),
              gpio_get_level(AXP2602_CHARGE_GPIO),
              gpio_get_level(AXP2602_IRQ_GPIO));
 }
@@ -226,10 +259,7 @@ esp_err_t app_battery_monitor_start(void)
         return ESP_ERR_NO_MEM;
     }
 
-    ret = gpio_install_isr_service(0);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
-        goto fail;
-    }
+    /* board_support_prepare() owns the shared GPIO ISR service. */
     ret = gpio_isr_handler_add(AXP2602_IRQ_GPIO,
                                battery_irq_handler, s_monitor_task);
     if (ret != ESP_OK) {

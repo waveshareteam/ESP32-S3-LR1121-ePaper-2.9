@@ -55,10 +55,14 @@ radio activation. Never publish real network keys in source code or logs.
 ## Continuous integration and Releases
 
 The GitHub Actions workflow discovers direct first-party examples and is
-configured for ESP-IDF v5.5.5, ESP-IDF v6.0.2, and Arduino-ESP32 3.3.11.
-The ESP-IDF 09 comprehensive demo requires 6.2 development APIs and is not
-covered by the configured stable IDF versions; its CI entries need a separate
-framework decision before merge. Successful builds are designed to produce flashable ZIP archives containing a
+configured for stable ESP-IDF v5.5.6 and Arduino-ESP32 3.3.11, with a separate
+experimental ESP-IDF 6.2 job pinned to SDK commit `08e0d30a`. All 13 ESP-IDF
+examples, including 09, support both the 5.5 and 6.2 validation environments.
+See [framework compatibility](docs/idf-compatibility.md) for exact versions and
+verification limits. Board definitions come from `waveshare/waveshare_boards`;
+until that component publishes this product, follow the
+[manual board preparation](examples/esp-idf/README.md#board-manager-integration).
+Stable builds produce flashable ZIP archives containing a
 manifest, SHA-256 checksums, source binary segments, a combined image, and
 Windows/POSIX flash helpers. A `v*` tag is designed to publish those archives
 as a GitHub Release.
@@ -73,7 +77,6 @@ sleep, timing, or other physical hardware behavior.
 | --- | --- |
 | `examples/esp-idf/` | First-party ESP-IDF projects |
 | `examples/arduino/` | First-party Arduino sketches and bundled library |
-| `examples/esp-idf/boards/` | Source board definitions |
 | `hardware/` | Schematics and mechanical-document placeholders |
 | `config/` | Machine-readable CI configuration |
 | `scripts/` | Example discovery and static automation |

@@ -15,7 +15,7 @@ import unittest
 PROJECT = Path(__file__).resolve().parents[1]
 SDK_SOURCE = (Path(os.environ["IDF_PATH"]) / "components/bt/host/nimble/nimble/"
               "nimble/host/src/ble_hs.c")
-BUILD_SOURCE = PROJECT / "build/nimble_compat/ble_hs.c"
+BUILD_SOURCE = Path(os.environ.get("IDF_BUILD_DIR", PROJECT / "build")) / "nimble_compat/ble_hs.c"
 
 
 def run_lifecycle(source, connect):
@@ -34,6 +34,9 @@ def run_lifecycle(source, connect):
 static int ble_hs_rx_q, initialized, released;
 static void *ble_hs_event_rx_data;
 static void ble_hs_flow_deinit(void) {}
+/* IDF 5.5 tears down this mutex inside the extracted queue-lifetime block. */
+static int ble_hs_mutex;
+static void ble_npl_mutex_deinit(int *mutex) { (void)mutex; }
 static void ble_mqueue_init(int *q, void *fn, void *arg) {
     (void)fn; (void)arg;
     if (*q) exit(22);

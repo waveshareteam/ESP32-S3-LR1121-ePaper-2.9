@@ -82,6 +82,8 @@ jobs:
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
       count: ${{ steps.discover.outputs.count }}
+      experimental_matrix: ${{ steps.experimental.outputs.matrix }}
+      experimental_count: ${{ steps.experimental.outputs.count }}
     steps:
       - uses: actions/checkout@v4
       - id: discover
@@ -94,6 +96,15 @@ jobs:
             --allow-empty-selector \
             --expect-examples 13 \
             --github-output "$GITHUB_OUTPUT"
+
+      - id: experimental
+        env:
+          TARGET_SELECTOR: ${{ inputs.target || 'all' }}
+        run: |
+          python3 scripts/discover_examples.py \
+            --surface esp-idf --idf-experimental \
+            --selector "$TARGET_SELECTOR" --allow-empty-selector \
+            --expect-examples 13 --github-output "$GITHUB_OUTPUT"
 
   build-esp-idf:
     name: ESP-IDF ${{ matrix.idf }} / ${{ matrix.name }}
@@ -118,11 +129,17 @@ jobs:
           . "$IDF_PATH/export.sh"
           build_dir="$GITHUB_WORKSPACE/.ci-build/esp-idf/$EXAMPLE_SLUG-$FRAMEWORK_VERSION"
           idf.py --version
-          if [ "$EXAMPLE_SLUG" != "07_sd_card" ]; then
-            python -m pip install esp-bmgr-assist==0.8.3
-            idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9 -c "$GITHUB_WORKSPACE/examples/esp-idf/boards"
+          python -m pip install esp-bmgr-assist==0.8.3
+          idf.py -C "$EXAMPLE_PATH" bmgr -l
+          if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
+            echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
+            exit 1
           fi
+          idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
           idf.py -C "$EXAMPLE_PATH" -B "$build_dir" set-target "$BUILD_TARGET" build
+          if [ "$EXAMPLE_SLUG" = "09_comprehensive_demo" ]; then
+            IDF_BUILD_DIR="$build_dir" python "$EXAMPLE_PATH/tests/test_nimble_observer_deinit.py"
+          fi
       - name: Package and validate firmware
         shell: bash
         env:
@@ -151,6 +168,60 @@ jobs:
           name: firmware-esp-idf-${{ matrix.slug }}-${{ matrix.idf }}
           path: release-artifacts/*.zip
           if-no-files-found: error
+
+  build-esp-idf-experimental:
+    name: Experimental ESP-IDF ${{ matrix.idf }} / ${{ matrix.name }}
+    needs: discover-esp-idf
+    if: needs.discover-esp-idf.outputs.experimental_count != '0'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-esp-idf.outputs.experimental_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned experimental SDK
+        shell: bash
+        env:
+          IDF_REVISION: ${{ matrix.idf_ref }}
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flex bison gperf ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+          sdk_dir="$RUNNER_TEMP/esp-idf-experimental"
+          export IDF_TOOLS_PATH="$RUNNER_TEMP/idf-tools-experimental"
+          git init "$sdk_dir"
+          git -C "$sdk_dir" remote add origin https://github.com/espressif/esp-idf.git
+          git -C "$sdk_dir" fetch --depth 1 origin "$IDF_REVISION"
+          git -C "$sdk_dir" checkout --detach FETCH_HEAD
+          test "$(git -C "$sdk_dir" rev-parse HEAD)" = "$IDF_REVISION"
+          git -C "$sdk_dir" submodule update --init --recursive --depth 1
+          "$sdk_dir/install.sh" "$BUILD_TARGET"
+          echo "IDF_PATH=$sdk_dir" >> "$GITHUB_ENV"
+          echo "IDF_TOOLS_PATH=$IDF_TOOLS_PATH" >> "$GITHUB_ENV"
+      - name: Build experimental SDK compatibility
+        shell: bash
+        env:
+          EXAMPLE_PATH: ${{ matrix.path }}
+          EXAMPLE_SLUG: ${{ matrix.slug }}
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          . "$IDF_PATH/export.sh"
+          python -m pip install esp-bmgr-assist==0.8.3
+          idf.py -C "$EXAMPLE_PATH" bmgr -l
+          if [ ! -f "$EXAMPLE_PATH/managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_info.yaml" ]; then
+            echo "::error::The downloaded waveshare/waveshare_boards package must publish esp32_s3_lr1121_epaper_2_9 before this CI build can run."
+            exit 1
+          fi
+          idf.py -C "$EXAMPLE_PATH" bmgr -b esp32_s3_lr1121_epaper_2_9
+          build_dir="$GITHUB_WORKSPACE/.ci-build/experimental/$EXAMPLE_SLUG"
+          idf.py -C "$EXAMPLE_PATH" -B "$build_dir" set-target "$BUILD_TARGET" build
+          if [ "$EXAMPLE_SLUG" = "09_comprehensive_demo" ]; then
+            IDF_BUILD_DIR="$build_dir" python "$EXAMPLE_PATH/tests/test_nimble_observer_deinit.py"
+          fi
 
   discover-arduino:
     name: Discover Arduino sketches

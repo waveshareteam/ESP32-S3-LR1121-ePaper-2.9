@@ -38,6 +38,21 @@ class ExamplesWorkflowTests(unittest.TestCase):
         self.assertIn('--build-path "$build_dir"', arduino_section)
         self.assertNotIn('--output-dir "$build_dir"', arduino_section)
 
+    def test_experimental_sdk_cannot_publish_as_stable_release(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        experimental = workflow.split("  build-esp-idf-experimental:\n", 1)[1].split(
+            "  discover-arduino:\n", 1)[0]
+        self.assertIn('fetch --depth 1 origin "$IDF_REVISION"', experimental)
+        self.assertIn('rev-parse HEAD', experimental)
+        self.assertNotIn('package_firmware.py', experimental)
+        self.assertNotIn('upload-artifact', experimental)
+        release = workflow.split("  release:\n", 1)[1]
+        self.assertNotIn('build-esp-idf-experimental', release)
+
+    def test_both_sdk_channels_run_observer_regression(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertEqual(workflow.count('IDF_BUILD_DIR="$build_dir" python'), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
