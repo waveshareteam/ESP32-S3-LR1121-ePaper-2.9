@@ -48,7 +48,7 @@ ESP-IDF 与 Arduino 各有 13 个示例，目录见根 README 的对照表。
 - [ESP-IDF 09 综合测试](../examples/esp-idf/09_comprehensive_demo/README.md)
 - [ESP-IDF 07 SD 卡、显示与长文件名设置](../examples/esp-idf/07_sd_card/README.md)
 - [Arduino 07 SD 卡操作与显示](../examples/arduino/07_sd_card/README.md)
-- [硬件原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Rev1.1.pdf)
+- [硬件原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF.pdf)
 - [HF/LF 参考固件及校验值](../firmware/README.md)
 
 ## 需要写清楚的操作
