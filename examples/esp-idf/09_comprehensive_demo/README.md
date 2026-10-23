@@ -152,9 +152,15 @@ mask，等待 GPIO0 稳定释放，然后重新执行全部自检、外设初始
 
 ## 构建与烧录
 
-本示例面向 ESP-IDF 6.2.x 和 ESP32-S3 N16R8：
+本示例兼容 ESP-IDF 5.5 与 6.2，目标为 ESP32-S3 N16R8。
+手册优先使用 5.5 稳定版；6.2 使用固定的开发版提交，详见
+[版本兼容说明](../../../docs/idf-compatibility.md)。
+
+Ubuntu Bash（已加载所选 ESP-IDF 环境）：
 
 ~~~bash
+python -m pip install esp-bmgr-assist==0.8.3
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../boards
 idf.py set-target esp32s3
 idf.py build
 idf.py -p PORT flash monitor
@@ -175,7 +181,7 @@ python tests/test_nimble_observer_deinit.py -v
 
 ## 预期日志与判定
 
-部分 ESP-IDF 6.2 开发版本在 BLE 仅 Observer 模式下，退出时会释放未初始化的
+验证使用的 ESP-IDF 5.5 和 6.2 SDK 在 BLE 仅 Observer 模式下，退出时会释放未初始化的
 RX 数据队列，导致 `ble_mqueue_deinit / npl_eventq_queued_get_task` 空指针崩溃。
 工程通过 `cmake/nimble_observer_deinit.cmake` 在构建目录生成带条件保护的
 `ble_hs.c`，使释放条件与初始化一致；不修改已安装 SDK，仍执行完整的

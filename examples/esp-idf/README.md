@@ -45,10 +45,11 @@ idf.py build
 are intentionally omitted. Generate board code before building a fresh checkout.
 Do not edit files inside `managed_components` to add the product board.
 
-Most examples require IDF >=5.4.3, example 07 requires >=5.5.0, and example 09
-currently requires >=6.2.0,<6.3.0. The installed 6.2 development environment was
-used for the earlier comprehensive-demo test; the stable CI matrix does not
-cover that project. See the manual handoff for validation boundaries.
+All 13 examples declare IDF >=5.5.0,<6.3.0 and target ESP32-S3. Use the stable
+5.5 toolchain for the user manual; 6.2 compatibility is checked against a pinned
+development SDK rather than a floating master branch. See
+[framework compatibility](../../docs/idf-compatibility.md) for exact versions,
+build results and the separate experimental CI job.
 
 Board Manager owns buses, GPIOs, power control and the native WS2812/RMT device.
 Examples carry their own support/display/font components; changes to common

@@ -8,8 +8,13 @@
   },
   "esp_idf": {
     "versions": [
-      "v5.5.5",
-      "v6.0.2"
+      "v5.5.6"
+    ],
+    "experimental_versions": [
+      {
+        "version": "v6.2.0-dev",
+        "ref": "08e0d30a74ad0bfd5a34933142b80f45619ee410"
+      }
     ]
   },
   "arduino": {

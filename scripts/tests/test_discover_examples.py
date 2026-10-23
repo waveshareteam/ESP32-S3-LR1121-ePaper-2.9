@@ -124,6 +124,42 @@ class DiscoverExamplesTests(unittest.TestCase):
         self.assertEqual(count, 0)
         self.assertEqual(matrix, {"include": []})
 
+    def configure_experimental(self, revision="08e0d30a74ad0bfd5a34933142b80f45619ee410"):
+        path = self.repo / "config/ci.json"
+        config = json.loads(path.read_text())
+        config["esp_idf"]["experimental_versions"] = [
+            {"version": "v6.2.0-dev", "ref": revision}
+        ]
+        path.write_text(json.dumps(config))
+        project = self.repo / "examples/esp-idf/09_demo"
+        project.mkdir(parents=True)
+        (project / "CMakeLists.txt").touch()
+        args = self.args("esp-idf")
+        args.idf_experimental = True
+        return args
+
+    def test_experimental_sdk_is_separate_and_pinned(self):
+        args = self.configure_experimental()
+        matrix, count = discover_examples.build_matrix(args)
+        self.assertEqual(count, 1)
+        self.assertEqual(len(matrix["include"]), 1)
+        entry = matrix["include"][0]
+        self.assertEqual(entry["idf"], "v6.2.0-dev")
+        self.assertEqual(entry["idf_ref"], "08e0d30a74ad0bfd5a34933142b80f45619ee410")
+        stable, _ = discover_examples.build_matrix(self.args("esp-idf"))
+        self.assertFalse(any("idf_ref" in row for row in stable["include"]))
+
+    def test_experimental_sdk_rejects_floating_revision(self):
+        args = self.configure_experimental("master")
+        with self.assertRaisesRegex(ValueError, "full commit SHA"):
+            discover_examples.build_matrix(args)
+
+    def test_experimental_sdk_rejects_unpinned_cli_override(self):
+        args = self.configure_experimental()
+        args.idf_versions = "v6.2.0"
+        with self.assertRaisesRegex(ValueError, "must come from config"):
+            discover_examples.build_matrix(args)
+
 
 if __name__ == "__main__":
     unittest.main()

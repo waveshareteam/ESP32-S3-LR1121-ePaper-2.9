@@ -14,7 +14,7 @@ from typing import Any
 IDF_ROOT = Path("examples/esp-idf")
 ARDUINO_ROOT = Path("examples/arduino")
 DEFAULT_CONFIG = Path("config/ci.json")
-DEFAULT_IDF_VERSIONS = ("v5.5.5", "v6.0.2")
+DEFAULT_IDF_VERSIONS = ("v5.5.6",)
 DEFAULT_ARDUINO_CLI = "1.5.1"
 DEFAULT_ARDUINO_CORE = "3.3.11"
 DEFAULT_TARGET = "esp32s3"
@@ -115,7 +115,7 @@ def split_versions(value: str | None, configured: Any) -> list[str]:
     if not versions:
         raise ValueError("at least one ESP-IDF version is required")
     if any(not SAFE_VERSION.fullmatch(version) for version in versions):
-        raise ValueError("ESP-IDF versions must be release tags such as v6.0.2")
+        raise ValueError("ESP-IDF versions must be release tags such as v5.5.6")
     return versions
 
 
@@ -128,11 +128,29 @@ def build_matrix(args: argparse.Namespace) -> tuple[dict[str, list[dict[str, str
     if args.surface == "esp-idf":
         discovered = discover_esp_idf(repo)
         selected = [entry for entry in discovered if selector_matches(entry, selector)]
-        versions = split_versions(args.idf_versions, config.get("esp_idf", {}).get("versions"))
+        idf_config = config.get("esp_idf", {})
+        experimental = getattr(args, "idf_experimental", False)
+        if experimental:
+            if args.idf_versions:
+                raise ValueError("experimental SDK refs must come from config/ci.json")
+            versions = idf_config.get("experimental_versions", [])
+            if not versions:
+                raise ValueError("no experimental ESP-IDF version configured")
+            for version in versions:
+                if (not isinstance(version, dict)
+                        or not re.fullmatch(r"v\d+\.\d+\.\d+-dev", str(version.get("version", "")))
+                        or not re.fullmatch(r"[0-9a-f]{40}", str(version.get("ref", "")))):
+                    raise ValueError("experimental SDKs require a dev label and full commit SHA")
+        else:
+            versions = split_versions(args.idf_versions, idf_config.get("versions"))
         target = args.target or str(board.get("target") or DEFAULT_TARGET)
         if not SAFE_TARGET.fullmatch(target):
             raise ValueError(f"invalid ESP target: {target!r}")
-        include = [entry | {"idf": version, "target": target} for entry in selected for version in versions]
+        if experimental:
+            include = [entry | {"idf": version["version"], "idf_ref": version["ref"],
+                                "target": target} for entry in selected for version in versions]
+        else:
+            include = [entry | {"idf": version, "target": target} for entry in selected for version in versions]
     else:
         discovered = discover_arduino(repo)
         selected = [entry for entry in discovered if selector_matches(entry, selector)]
@@ -164,6 +182,8 @@ def main() -> int:
     parser.add_argument("--surface", choices=("esp-idf", "arduino"), required=True)
     parser.add_argument("--selector", default="all")
     parser.add_argument("--idf-versions", help="Comma-separated override for config/ci.json.")
+    parser.add_argument("--idf-experimental", action="store_true",
+                        help="Use pinned development SDKs, separately from the stable release matrix.")
     parser.add_argument("--arduino-core", help="Override the configured Arduino core version.")
     parser.add_argument("--fqbn", help="Override the configured Arduino FQBN.")
     parser.add_argument("--target", help="Override the configured ESP-IDF target.")
