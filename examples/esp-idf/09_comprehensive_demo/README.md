@@ -156,11 +156,12 @@ mask，等待 GPIO0 稳定释放，然后重新执行全部自检、外设初始
 手册优先使用 5.5 稳定版；6.2 使用固定的开发版提交，详见
 [版本兼容说明](../../../docs/idf-compatibility.md)。
 
+先按[板型准备说明](../README.md#board-manager-integration)下载组件并补入板型。
 Ubuntu Bash（已加载所选 ESP-IDF 环境）：
 
 ~~~bash
 python -m pip install esp-bmgr-assist==0.8.3
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../boards
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py set-target esp32s3
 idf.py build
 idf.py -p PORT flash monitor

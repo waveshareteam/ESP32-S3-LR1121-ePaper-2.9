@@ -33,18 +33,26 @@ Enabled、Hardware CDC and JTAG。更新随仓库提供的 `Waveshare_LR1121_EPa
 或 `app_config.h`；截图和手册不包含真实凭据。2.13 寸配置采用较短的界面提示。
 
 ESP-IDF 源码不包含 `build`、`managed_components`、`sdkconfig`、锁文件和
-`components/gen_bmgr_codes`。在所选示例目录执行：
+`components/gen_bmgr_codes`，也不保存本地 `boards` 副本。先在所选示例目录执行：
 
 ```bash
 python -m pip install esp-bmgr-assist==0.8.3
-idf.py bmgr -l -c ../boards
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9 -c ../boards
+idf.py bmgr -l
+```
+
+当前下载的 `waveshare/waveshare_boards` 0.1.2 尚无该板型。按现阶段流程，
+将板级库维护者提供的 `esp32_s3_lr1121_epaper_2_9` 文件夹手动复制到本示例的
+`managed_components/waveshare__waveshare_boards/boards/`，再执行：
+
+```bash
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py build
 ```
 
 以上命令用于 Ubuntu Bash（已加载对应 ESP-IDF 环境）。07 SD 示例不使用
-Board Manager。仅查看已发布微雪板型可直接运行 `idf.py bmgr -l`；本产品的
-板定义随源码存于 `examples/esp-idf/boards/`，无需修改下载组件。
+Board Manager。后续板级组件发布该板型后，省略手动复制步骤。每个示例的
+下载组件各自独立；清理或更新组件后需要重新确认板型是否存在。板型与
+生成代码均不提交到本仓库，自动 CI 需等待板型进入已发布组件。
 
 ## 验证边界与待补材料
 
@@ -52,8 +60,10 @@ Board Manager。仅查看已发布微雪板型可直接运行 `idf.py bmgr -l`�
   7.7.1 编译通过（ESP32S3 Dev Module、16 MB Flash、OPI PSRAM）。综合示例
   在整合前也通过了 2.13 寸配置编译。
 - 字体渲染、两种屏幕尺寸、文本边界、消抖和双击逻辑已通过主机测试。
-- 全部 13 个 ESP-IDF 示例已在 5.5.6 和固定提交的 6.2 开发版下，从独立
-  源码目录生成配置并编译通过，共 26 次构建。09 的源码契约检查通过，
+- 移除仓库内板型副本前，全部 13 个 ESP-IDF 示例已在 5.5.6 和固定提交的
+  6.2 开发版下编译通过，共 26 次构建。移除后，01 示例按“下载组件后
+  手动复制板型”的流程完成双版本生成与编译，详见版本兼容说明。
+  09 的源码契约检查通过，
   并在两个环境中分别通过 3 项 NimBLE 生命周期主机回归。应用分区余量在
   5.5.6 下为 16 KB（约 1%），6.2 下约 2%，增加功能前需要重新检查大小。
   用户此前报告 ESP-IDF 示例实板正常；本次兼容改动尚未进行实板复验。

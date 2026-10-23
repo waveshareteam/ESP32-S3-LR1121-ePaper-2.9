@@ -7,10 +7,10 @@ a seven-line status page using the repository's full/fast refresh policy.
 
 ## Hardware and radio adapter
 
-The pin values come from the repository board definitions:
+The pin values come from the board definitions in the downloaded component:
 
-- `../components/waveshare_esp_boards/esp32_s3_lr1121_epaper_2_9/board_peripherals.yaml`
-- `../components/waveshare_esp_boards/esp32_s3_lr1121_epaper_2_9/board_devices.yaml`
+- `managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_peripherals.yaml`
+- `managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/board_devices.yaml`
 
 | Signal | ESP32-S3 connection |
 | --- | --- |
@@ -43,18 +43,14 @@ schematic.
 
 The component manifests select:
 
-- ESP-IDF `>=5.4.3`. The existing LR1121 example's retained `sdkconfig` and
-  dependency lock record 6.2.0, while its older build description identifies
-  `v6.1-dev-5824-gfa8039b5ca-dirty`.
+- ESP-IDF `>=5.5.0,<6.3.0`; see [framework compatibility](../../../docs/idf-compatibility.md).
 - `jgromes/radiolib` 7.7.1, pinned exactly by this example.
-- `espressif/esp_board_manager` 0.6.1.
-- The repository-local `waveshare_esp_boards` board definition.
-- The repository-local e-paper driver/font and `lvgl/lvgl` `^9.4.0`; the
-  existing LR1121 dependency lock resolves LVGL 9.5.0.
+- `waveshare/waveshare_boards`, which supplies Board Manager transitively.
+- The project-local e-paper driver/font and their managed dependencies.
 
-Retained local build output is not evidence that this source revision has been
-compiled or radio-tested. Verify the source with the intended ESP-IDF checkout
-and hardware before deployment.
+The board definition is supplied through the downloaded Waveshare component.
+Follow the [board preparation instructions](../README.md#board-manager-integration)
+for the temporary manual-copy step until the component publishes this product.
 
 The implementation uses the RadioLib 7.7.1 APIs verified in the local component
 source: `LR1121`, `LoRaWANNode`, `beginOTAA()`, `activateOTAA()`,
@@ -336,13 +332,14 @@ executed or applied as radio policy.
 
 ## Build, flash, and monitor
 
-From the repository `demo` directory:
+Prepare the component board definition as linked above, then run in this example
+directory with an activated ESP-IDF environment (Ubuntu Bash):
 
-```text
-idf.py -C 10_lr1121_lorawan set-target esp32s3
-idf.py -C 10_lr1121_lorawan reconfigure
-idf.py -C 10_lr1121_lorawan build
-idf.py -C 10_lr1121_lorawan -p PORT flash monitor
+```bash
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
+idf.py set-target esp32s3
+idf.py build
+idf.py -p PORT flash monitor
 ```
 
 Replace `PORT` with the board's serial port. A configured standard-EU868 device

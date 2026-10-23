@@ -17,6 +17,12 @@ job reports its own result and is not a dependency of the stable release job.
 Local verification is documented in [framework compatibility](idf-compatibility.md);
 remote Actions execution must be checked separately.
 
+Board definitions are loaded only from the downloaded `waveshare/waveshare_boards`
+component. The downloaded 0.1.2 release does not contain this product yet; the
+Board Manager jobs fail with an explicit missing-board message until a component
+release includes it. Local manual board-folder copies are not supplied to CI.
+Example 07 uses SDMMC directly and does not require that board package.
+
 Manual dispatch accepts `all`, an example name, or a repository-relative
 example path. Bundled library examples are excluded.
 

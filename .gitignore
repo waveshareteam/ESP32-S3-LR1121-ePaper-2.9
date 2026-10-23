@@ -31,3 +31,6 @@ __pycache__/
 
 # Board Manager regenerates these sources for the selected board.
 gen_bmgr_codes/
+
+# Board definitions belong to waveshare/waveshare_boards, not this repository.
+/examples/esp-idf/boards/

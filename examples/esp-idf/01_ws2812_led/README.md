@@ -20,7 +20,7 @@ acquires the `gpio_epaper_power` peripheral and `status_led` device from the sha
   and LR1121 devices.
 
 The GPIO, pixel count, wire order, and RMT settings come from
-`../components/waveshare_esp_boards/esp32_s3_lr1121_epaper_2_9`. This migration
+`managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9`. This migration
 preserves the existing pin assignments. Confirm the single-pixel and GRB settings
 by observing the RED, GREEN, and BLUE stages on the target board.
 
@@ -45,35 +45,32 @@ completed breathing cycle.
 
 ## List boards, build and flash
 
+First follow the [board preparation instructions](../README.md#board-manager-integration).
+The board is supplied by `waveshare/waveshare_boards`; while the published
+component lacks this product, manually copy the matching board folder into the
+downloaded component as described there. No board YAML is stored in this repository.
+
 Activate ESP-IDF and run from this example directory (Ubuntu Bash):
 
 ```sh
+python -m pip install esp-bmgr-assist==0.8.3
 idf.py bmgr -l
+idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py build
 idf.py -p PORT flash monitor
 ```
 
-With `esp-bmgr-assist` installed, the first command downloads dependencies on a
-fresh project without running `reconfigure`. `main/idf_component.yml` declares
-`waveshare/waveshare_boards`, which brings in Board Manager transitively, and the
-local `waveshare_esp_boards` package, which supplies this board's definition.
-
-Generated board code is included in `components/gen_bmgr_codes`. If that directory
-has been removed, regenerate it before building:
-
-```sh
-idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
-```
-
-Before committing regenerated files, restore the portable generated
-`CMakeLists.txt` and `.gitignore`, and remove the environment-specific `board_path`
-from `gen_board_metadata.yaml`, as described in the parent README. For ordinary
-clean rebuilds, retain this source directory and use `idf.py fullclean`.
+The first listing downloads dependencies on a fresh project without running
+`reconfigure`. `main/idf_component.yml` declares `waveshare/waveshare_boards`,
+which brings in Board Manager transitively. Listing does not generate board
+code; board selection creates `components/gen_bmgr_codes` locally. That generated
+component and manually copied board files must not be committed. For ordinary
+clean rebuilds, retain the generated component and use `idf.py fullclean`.
 
 Replace `PORT` with the board's serial port. Confirm that the observed colors
 match the RED, GREEN, and BLUE log messages before relying on the breathing
 effect's hue sequence.
 
-Verified: first-run board listing and a complete build with ESP-IDF 5.5.5,
-Board Manager 0.7.4, Waveshare boards 0.1.2, and led_strip 3.0.3. Hardware color
+For the 5.5 and 6.2 build results and their board-definition prerequisites, see
+[framework compatibility](../../../docs/idf-compatibility.md). Hardware color
 and power sequencing tests remain to be run on the board.
