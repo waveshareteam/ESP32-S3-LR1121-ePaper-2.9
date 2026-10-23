@@ -15,7 +15,7 @@ ESP-IDF 与 Arduino 各有 13 个示例，目录见根 README 的对照表。
 - [Arduino 安装与示例说明](../examples/arduino/README.md)
 - [Arduino 09 综合测试](../examples/arduino/09_comprehensive_demo/README.md)
 - [ESP-IDF 环境与 Board Manager](../examples/esp-idf/README.md)
-- [ESP-IDF 03 电子纸照片显示](../examples/esp-idf/03_epaper_2_9/README.md)
+- [ESP-IDF 03 电子纸功能测试](../examples/esp-idf/03_epaper_2_9/README.md)
 - [ESP-IDF 09 综合测试](../examples/esp-idf/09_comprehensive_demo/README.md)
 - [SD 卡操作与测试文件清理](../examples/arduino/07_sd_card/README.md)
 - [硬件原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Rev1.1.pdf)

@@ -6,10 +6,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#if CONFIG_EPAPER_DEMO_PHOTO_HF || CONFIG_EPAPER_DEMO_PHOTO_LF
-#include "photo_display.h"
-#endif
-
 static const char *TAG = "epaper_test";
 
 void app_main(void)
@@ -35,10 +31,6 @@ void app_main(void)
     ESP_ERROR_CHECK(board_epaper_refresh(true));
     ESP_ERROR_CHECK(board_epaper_sleep());
     ESP_LOGI(TAG, "screen cleared to white; panel sleeping; periodic refresh disabled");
-    return;
-#elif CONFIG_EPAPER_DEMO_PHOTO_HF || CONFIG_EPAPER_DEMO_PHOTO_LF
-    ESP_ERROR_CHECK(photo_display_show(&panel));
-    ESP_LOGI(TAG, "photo screen shown; periodic refresh disabled");
     return;
 #else
     char panel_line[24];
