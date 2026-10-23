@@ -58,6 +58,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts/tests -p "test_*.py"
           python3 -m unittest discover -s releases/tests -p "test_*.py"
+          python3 examples/arduino/tools/test_deep_sleep.py
       - name: Validate Python and configuration syntax
         run: |
           python3 -m py_compile scripts/discover_examples.py releases/*.py

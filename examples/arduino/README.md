@@ -68,6 +68,9 @@ long text ends in `...` instead of overflowing into the next cell. Example 09
 uses the ESP-IDF two-column runtime layout and full-width radio counters.
 Examples 01 and 02 remain LED-only and serial-only respectively.
 
+See [08 deep sleep](08_deep_sleep/README.md) for the 600-second timer, GPIO0
+EXT0 wake, radio pin isolation and shared-power GPIO hold matching ESP-IDF 08.
+
 See [09 comprehensive test](09_comprehensive_demo/README.md) for Wi-Fi settings,
 GPIO1 transmit, GPIO0 double-click sleep and single-click wake.
 
