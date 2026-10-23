@@ -1,6 +1,5 @@
 #include "board_epaper.h"
 #include "epaper_ui_font.h"
-#include "epaper_gray4_v2.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -574,32 +573,6 @@ esp_err_t board_epaper_show_lines(const char *title, const char *const *lines, s
     esp_err_t ret = board_epaper_refresh_locked(update_mode);
     board_epaper_unlock();
     return ret;
-}
-
-esp_err_t board_epaper_show_gray4_v2(const uint8_t *pixels, size_t size)
-{
-    ESP_RETURN_ON_FALSE(pixels && size == 128U * 296U / 4U,
-                        ESP_ERR_INVALID_ARG, TAG, "invalid four-gray image");
-    ESP_RETURN_ON_ERROR(board_epaper_start(NULL), TAG, "start e-paper failed");
-    ESP_RETURN_ON_FALSE(board_epaper_lock(-1), ESP_ERR_TIMEOUT, TAG, "LVGL lock timeout");
-    if (!board_spi_lock(BOARD_SPI_OWNER_EPAPER, -1)) {
-        board_epaper_unlock();
-        return ESP_ERR_TIMEOUT;
-    }
-
-    esp_err_t ret = epd_show_gray4_v2(s_panel.epd, pixels, size);
-    /* Gray LUT/RAM must never feed the normal fast-refresh path. Always
-     * sleep, including after a timeout; start() then resets the B/W driver. */
-    esp_err_t sleep_ret = epd_sleep(s_panel.epd);
-    board_spi_unlock(BOARD_SPI_OWNER_EPAPER);
-    s_sleeping = true;
-    s_flush_completed = false;
-    s_fast_refreshes_remaining = 0;
-    esp_err_t power_ret = board_epaper_power_set(false);
-    board_epaper_unlock();
-    if (ret != ESP_OK) return ret;
-    if (sleep_ret != ESP_OK) return sleep_ret;
-    return power_ret;
 }
 
 esp_err_t board_epaper_sleep(void)

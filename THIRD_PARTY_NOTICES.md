@@ -24,17 +24,6 @@ Terminus font listed below.
 The component copies currently contain identical license texts. Each local
 license remains authoritative.
 
-## Waveshare 2.9inch V2 four-gray waveform
-
-- Path: examples/esp-idf/03_epaper_2_9/components/esp_epaper/src/controllers/ssd1680_290_gray4.c
-- Source: waveshareteam/e-Paper, RaspberryPi_JetsonNano/c/lib/e-Paper/EPD_2in9_V2.c
-- Upstream revision: e4bb8924d47c8ac88072cdddea5544e2f4314d92
-- Author: Waveshare team
-- License: upstream MIT-style permission notice, retained in the source file
-
-The four-gray waveform and initialization sequence are panel-specific. Their
-inclusion does not establish that every SSD16xx 2.9-inch panel is compatible.
-
 ## Terminus font
 
 - Paths: local components/epaper_ui_font/ copies under the ESP-IDF examples;
