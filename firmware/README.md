@@ -1,10 +1,9 @@
 # Supplied firmware references
 
-These HF/LF images were supplied with the working materials. They were not
-produced by the source builds in this merge request. Their source commit,
-flash offset, release version and hardware test record have not been established.
-Do not derive flashing instructions or claim source equivalence from the filename.
-Use the source-build release packaging tools for verified flashable bundles.
+This directory contains supplied HF/LF reference binaries and their checksums.
+To flash a repository example, build that example or use a source-built package
+with its manifest and flash helpers. Flash addresses come from the package
+manifest; the HF/LF filenames do not specify a flash address.
 
 | File | Bytes | SHA-256 |
 | --- | --- | --- |

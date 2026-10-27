@@ -117,10 +117,10 @@ EU868 部署模板；网络服务器和网关必须与第 12 号部署保持一�
 
 | 项目 | 固定值 | 源码位置 |
 | --- | --- | --- |
-| 共享 SPI | SPI3_HOST，SCK40/MISO46/MOSI45 | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_support.c` 与 `components/gen_bmgr_codes/gen_board_periph_config.c` |
+| 共享 SPI | Board Manager 配置的共享总线，SCK40/MISO46/MOSI45 | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_support.c` 与 `components/gen_bmgr_codes/gen_board_periph_config.c` |
 | LR1121 控制 | DIO1/IRQ6、NSS/CS42、RST39、BUSY41、8 MHz | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_support.c` 与 `components/gen_bmgr_codes/gen_board_device_config.c` |
 | 共享电源 | GPIO38 高有效，上电后等待 100 ms，Class C 期间保持高 | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_support.c` |
-| TCXO | 1.6 V | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_lorawan_radio.cpp` |
+| TCXO | 3.0 V | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_lorawan_radio.cpp` |
 | RF switch/PA | DIO5/DIO6，LR1121 高功率 PA | `components/esp32_s3_lr1121_epaper_2_9_support/src/board_lorawan_radio.cpp` |
 
 板级值不是部署参数，不在 `multicast_config.h` 重复定义，避免形成未被
@@ -263,11 +263,7 @@ RX1/RX2 窗口的必要代价；服务器不应假定设备在这段时间仍能
 python .\static_contract_check.py
 ```
 
-脚本只读取第 11/14 号源码、manifest、依赖锁和 RadioLib 7.7.1 参考实现，
+脚本只读取本示例源码、manifest、依赖锁和 RadioLib 7.7.1 参考实现，
 不会调用 `idf.py`、CMake、Ninja、编译器、烧录工具或串口。它检查目录结构、
 CMake 源文件与组件、依赖版本、真实组播 API、LR1121 引脚/区域、单播与组播
 边界、Class C 恢复、NVS/计数器、缓冲区、端口、敏感信息和 README 宏映射。
-
-本次交付按要求只完成静态检查：**未编译、未烧录、未进行网络服务器联调，
-也未进行单设备或多设备实板组播验证**。静态检查不能证明 RF 参数、天线、
-网关、服务器配置、真实功耗或电子纸时序在硬件上正确。

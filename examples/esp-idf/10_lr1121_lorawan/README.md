@@ -34,10 +34,8 @@ PA path; it does not bypass the configured power or regional maximum. SPI
 transactions use the same board mutex as the e-paper driver. RadioLib owns
 LoRaWAN modulation, regional channels, RX1/RX2 timing, and frame processing.
 
-The repository does not contain a schematic or other authoritative hardware
-design file. The table above is consistent with the current board YAML and the
-existing LR1121 example, but it has not been independently checked against a
-schematic.
+Board connections are documented in the
+[Rev1.1 schematic](../../../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf).
 
 ## Dependencies
 

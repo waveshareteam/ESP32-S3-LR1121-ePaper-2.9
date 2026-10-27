@@ -5,12 +5,12 @@
 | `examples/esp-idf/` | One first-party ESP-IDF project per direct child |
 | `examples/arduino/` | Direct first-party sketches and bundled support files |
 | `examples/arduino/libraries/` | Repository-pinned Arduino board library |
-| `assets/product/` | Product images |
+| `docs/images/` | Product images |
 | `hardware/` | Schematics and mechanical references |
 | `config/` | Machine-readable automation settings |
 | `scripts/` | Example discovery and static checks |
 | `releases/` | Firmware packagers and artifact tools |
-| `firmware/` | Factory/recovery firmware placeholder |
+| `firmware/` | HF/LF reference binaries and checksums |
 | `docs/` | User and maintainer documentation |
 | `.github/` | GitHub workflows and collaboration templates |
 

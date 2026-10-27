@@ -3,18 +3,13 @@ product:
   revision: "1.1"
 
 product_images:
-  front: null
-  back: null
-  publication_status: "not-in-current-snapshot"
+  overview: "images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp"
 
 hardware_documents:
   schematic:
     path: "../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf"
     pcb_identifier: "ESP32-S3-LR1121-ePaper-2.9-XF"
     document_revision: "Rev1.1"
-  dimensions:
-    status: "pending"
-    placeholder: null
 
 licensing:
   code: "Apache-2.0"

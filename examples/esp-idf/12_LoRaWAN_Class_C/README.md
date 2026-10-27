@@ -2,8 +2,6 @@
 
 本示例面向 ESP32-S3 + LR1121 + 2.9 英寸电子纸板，演示 LoRaWAN 1.1 OTAA 会话激活后进入 Class C、持续接收服务器异步下行，并按固定周期发送上行。
 
-> 当前验证状态：本次代码重构仅完成源码、配置和文档的静态核对。按本次任务要求，重构版本未编译、未烧录、未连接网络服务器，也未进行串口或实板回归验证。因此本文描述的是重构后的代码设计和预期行为，不把用户在重构前完成的运行测试视为重构版本的验证结论。
-
 ## Class C 是什么
 
 LoRaWAN 设备类别描述设备何时打开接收窗口，并不决定设备如何激活。Class C 设备在没有发送时几乎持续保持接收窗口 RXC 打开；发送以及发送后的 RX1/RX2 窗口结束后，设备立即回到 RXC。网络服务器因此可在多数时间直接下发数据，延迟通常明显低于 Class A。
@@ -23,15 +21,15 @@ Class C、Class A、Class B 与 OTAA、ABP 是两组不同概念：前者是设�
 ## 硬件与软件基线
 
 - 射频芯片：LR1121，高功率 PA 路径。
-- SPI：SPI3_HOST，SCK GPIO40、MISO GPIO46、MOSI GPIO45，8 MHz。
+- SPI：由 Board Manager 配置的共享总线，SCK GPIO40、MISO GPIO46、MOSI GPIO45，8 MHz。
 - LR1121 控制引脚：NSS GPIO42、DIO1 GPIO6、RESET GPIO39、BUSY GPIO41。
 - 共享外设电源：GPIO38 保持高电平。Class C 活动期间电子纸休眠不会关闭该共享电源。
 - LR1121 RF switch：沿用 DIO5/DIO6 表和第 12 号高功率路径。
-- TCXO：沿用第 12 号 RadioLib 初始化基线 1.6 V。
+- TCXO：RadioLib 初始化使用 3.0 V。
 - LoRaWAN 库：`jgromes/radiolib` 7.7.1，版本在 `main/idf_component.yml` 中锁定，并由 `main/lorawan_config.h` 的版本检查保护。
-- ESP-IDF：目标为 ESP32-S3；第 12 号 `main/idf_component.yml` 使用 `>=5.4.3` 约束，当前 `dependencies.lock` 记录的解析版本为 6.2.0。本次重构未运行依赖解析，现有锁文件保持不变。
+- ESP-IDF：目标为 ESP32-S3，`main/idf_component.yml` 声明 `>=5.5.0,<6.3.0`；框架版本见[兼容说明](../../../docs/idf-compatibility.md)。
 
-仓库没有可用于本次工作的板卡专用权威原理图。上述引脚和电气常量仅与第 12 号已验证代码及当前生成板配置进行了交叉核对，不能表述为本次完成了原理图或实板验证。
+电路连接见 [Rev1.1 原理图](../../../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf)。
 
 ## 源码结构
 
@@ -169,7 +167,7 @@ LoRaWAN 1.1 下，`setClass(RADIOLIB_LORAWAN_CLASS_C)` 只会把 `DeviceModeInd`
 - 接收缓冲区按 `RADIOLIB_LORAWAN_MAX_PAYLOAD_SIZE` 分配，当前版本为 242 字节。长度参数是输出值，不是容量输入。
 - 有效下行输出 FPort、长度、十六进制和经过字符过滤、长度受限的安全文本；空包、重复帧计数和错误码分别处理。
 - RSSI 与 SNR 在成功收包后通过 LR1121 的 `getRSSI()`、`getSNR()` 读取。
-- RadioLib 7.7.1 的 LR1121 `getFrequencyError()` 尚未提供有效测量并固定返回 0，因此电子纸和日志明确显示 `N/A`，不会把 0 Hz 误报为实测频偏。
+- RadioLib 7.7.1 的 LR1121 `getFrequencyError()` 不提供有效测量并固定返回 0，因此电子纸和日志明确显示 `N/A`，不会把 0 Hz 误报为实测频偏。
 - 到达上行周期时，同一无线任务暂停 RXC 并调用 `sendReceive()`。无论返回成功、无下行还是错误，应用都会通过受保护 `receiveClassC()` 的公开包装再次启动并检查 RXC，不依赖 RadioLib 内部未向上传递的重开结果。发送与重开保持在同一无线关键区内，所有返回路径都会请求保存 session。
 - confirmed 上行不能只按 `sendReceive()` 的非负返回判断成功；返回 0 仅表示没有下行。本示例读取 `LoRaWANEvent_t::confirming` 确认真实 ACK，连续缺少 ACK 会计入失败阈值并触发退避，但不会单凭无 ACK 清除仍处于激活状态的 session。
 
@@ -239,7 +237,7 @@ RADIO INIT -> SESSION RESTORE / JOINING -> CLASS C NEGOTIATION
 
 显示任务使用长度为 1 的覆盖队列，只保留最新快照，并按 `LORAWAN_DISPLAY_MIN_INTERVAL_MS` 合并和限频刷新。启动阶段等待首次电子纸刷新尝试后才初始化无线。运行阶段另有高层无线关键区门：整帧电子纸刷新不能插入 `activateOTAA()`、`sendReceive()`、RXC 启动或下行解析等多步 RadioLib 操作；电子纸传输期间 LR1121 硬件保持 RXC，释放共享 SPI 后无线任务立即继续轮询。第 12 号目录内的本地 `components/esp_epaper` 把 SSD16xx BUSY 等待限制为 8000 ms，并把超时作为 `ESP_ERR_TIMEOUT` 返回，防止面板故障永久占用无线关键区和共享 SPI。
 
-电子纸正常刷新仍会暂时占用共享 SPI，并推迟软件读取 LR1121 已接收的数据；覆盖队列和 30 秒默认限频用于降低这种影响，但高密度连续异步下行仍可能超过射频芯片单次待处理能力。该时序边界尚未经过实板压力测试。
+电子纸正常刷新仍会暂时占用共享 SPI，并推迟软件读取 LR1121 已接收的数据；覆盖队列和 30 秒默认限频用于降低这种影响，但高密度连续异步下行仍可能超过射频芯片单次待处理能力。部署时按应用下行速率设置刷新间隔，避免连续下行超出处理能力。
 
 串口日志预期包含状态转换、激活结果、Class C 协商、RX2/RXC 参数、上行结果、异步下行 FPort/长度/十六进制/安全文本、RSSI/SNR、持久化结果和错误退避。日志不打印 OTAA 或 session 凭据。
 
@@ -255,21 +253,3 @@ RADIO INIT -> SESSION RESTORE / JOINING -> CLASS C NEGOTIATION
 6. 遵守区域占空比、网关发射资源和网络容量限制；Class C 低延迟不代表服务器可以无限制连续发射。
 
 Class C 适合市电或稳定外部供电的远程控制、执行器、告警终端和需要低延迟下行的设备。不适合要求电池长期休眠、主要上报传感数据且很少接收命令的节点；这类设备通常应优先使用 Class A，或在网络支持且需要可预测时隙时评估 Class B。
-
-## 本次静态检查范围
-
-本次仅进行了以下只读/静态核对：
-
-- 工程目录、CMake 源文件、include 路径和组件名；
-- `idf_component.yml` 与当前 RadioLib 7.7.1 依赖；
-- `setClass()`、`sendReceive()`、`getClass()`、`getDownlinkClassC()`、受保护 `receiveClassC()` 包装及其返回值/调用顺序；
-- LR1121 引脚、SPI3、8 MHz、RF switch、TCXO 1.6 V 和 GPIO38 共享电源常量；
-- EU868 单信道上行基线、sub-band、ADR、功率及 RX2/RXC 的区域/会话来源；
-- 单一无线任务、显示/无线关键区、持续接收、周期上行、ACK 判定、上行后恢复和错误退避路径；
-- nonces、session、FCntUp 高水位窗口写前预留、不降写约束、耗尽重入网、下行计数器恢复与保存路径；
-- 接收缓冲区上限、空包、重复包、安全文本和错误码处理；
-- 电子纸快照队列、首次刷新同步、刷新限频和 BUSY 有界超时；
-- 旧芯片名、其他平台专属入口、错误激活方式、绝对路径、无关资源和敏感信息残留；
-- README 中用户配置项与 `main/lorawan_config.h` 宏的对应关系。
-
-**按用户要求，本次未运行 `idf.py build`、`idf.py reconfigure`、CMake、Ninja 或任何语法编译；未烧录；未进行串口、网络服务器、入网、Class C 下行或实板验证。**
