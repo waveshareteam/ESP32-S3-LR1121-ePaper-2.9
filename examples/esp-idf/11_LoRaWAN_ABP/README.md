@@ -2,7 +2,7 @@
 
 本示例面向 ESP32-S3 + LR1121 + 2.9 英寸电子纸，使用 RadioLib 7.7.1 实现 LoRaWAN Class A ABP（Activation By Personalization，个性化激活）。设备和网络服务器预先配置 DevAddr 与会话密钥；启动后直接激活或恢复 ABP 会话，不发送 OTAA Join Request，也不等待 Join Accept。
 
-> 当前默认配置延续已实板验证的 LR1121 引脚、8 MHz SPI3、EU868 单信道和射频参数，适合与同样固定在 868.1 MHz / DR3 的网关和网络服务器联调。电子纸驱动与布局沿用本仓库第 10 号电子纸 LoRaWAN 示例。它不是公共 LoRaWAN 网络的通用多信道配置。部署前必须确认当地频谱、占空比和发射功率法规。
+> 当前默认配置延续已实板验证的 LR1121 引脚、8 MHz 共享 SPI、EU868 单信道和射频参数，适合与同样固定在 868.1 MHz / DR3 的网关和网络服务器联调。电子纸驱动与布局沿用本仓库第 10 号电子纸 LoRaWAN 示例。它不是公共 LoRaWAN 网络的通用多信道配置。部署前必须确认当地频谱、占空比和发射功率法规。
 
 ## ABP 与 OTAA
 
@@ -178,18 +178,10 @@ idf.py -p PORT flash monitor
 
 不要把密钥写入日志、电子纸、问题报告、截图或公开构建产物。始终连接合适的天线后再允许 LR1121 发射。
 
-## 验证状态与实测步骤
+## 操作检查
 
-- 设备烧录、启动和电子纸刷新：`PASS`（用户实板日志，2026-08-19）
-- ChirpStack ABP 会话激活与应用下行：`PASS`
-- Class A unconfirmed 上行：`PASS`
-- RX1 应用下行及 HEX/安全文本解析：`PASS`
-- USB-UART 复位后的 NVS/session 恢复：`PASS`
-- USB-UART 复位后的 `FCntUp` 连续性：`PASS`（复位前 0..3，复位后从 4 继续）
-- RX2 下行：`NOT_TESTED`
-- confirmed 上行 ACK：`NOT_TESTED`
-- 真实断电后的上下行计数连续性：`NOT_TESTED`
-- 复位后的下行计数连续性：`NOT_TESTED`
-- 无线事务中途掉电后的故障关闭：`NOT_TESTED`
-
-剩余实测应分别安排 RX2 和 confirmed 上行，再在发送间隔内多次真实断电，确认 `FCntUp` 及下行计数器始终前进且 ChirpStack 未报告 replay 或 counter rollback。最后在 TX/RX 窗口中切断电源，确认下次启动停在 `SESSION AMBIGUOUS` 且不再发射。
+1. 烧录后查看电子纸和串口中的会话激活或恢复状态。
+2. 在网络服务器查看周期上行、RX1/RX2 应用下行及帧计数器。
+3. 启用 confirmed 上行时，在服务器安排 ACK 并查看设备记录。
+4. 在发送间隔内复位或断电，查看会话恢复及帧计数器递增情况。
+5. 无线事务中掉电后，按 `SESSION AMBIGUOUS` 的恢复流程协调服务器和设备状态。

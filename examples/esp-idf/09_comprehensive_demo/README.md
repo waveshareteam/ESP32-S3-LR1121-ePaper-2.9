@@ -5,21 +5,21 @@ Wi-Fi APSTA、BLE 被动扫描、LR1121 持续接收和按键服务。持续 CPU
 压力测试已移除，不创建压测任务或分配压测缓冲。GPIO0 双击被确认后，
 按依赖顺序停止任务并进入 Deep-sleep。
 
-## 原理图审计
+## 硬件连接与测试功能
 
 | 功能 | 原理图连接 | 电源/共享关系 | 本示例测试 |
 | --- | --- | --- | --- |
 | GPIO0 按键 | GPIO0，低有效，外部 10K 上拉 | strapping/下载脚，也是 RTC IO | 清醒时双击休眠；Deep-sleep 时单击 EXT1 唤醒 |
 | GPIO1 按键 | GPIO1，低有效，外部 10K 上拉 | 普通数字 GPIO | 消抖后每次稳定按下只触发一帧 LoRa TX |
 | LR1121 | DIO1=6、NSS=42、RESET=39、BUSY=41 | 与电子纸共用 SCK=40、MOSI=45、MISO=46；LoRa_3V3 由 GPIO38 控制的 3V3 域经 R42 (0R) 供电，R43 (ESP_3V3) 未装 | 初始化、持续 RX、按键 TX、RSSI/SNR、错误计数、Sleep；断电后全部 ESP32 连接脚高阻隔离 |
-| 2.9 寸电子纸 | BUSY=8、RESET=9、DC=17、CS=18；原理图功能块标题仍写作“2.13inch e-Paper” | GPIO38 经 Q3/Q1 控制共享 3V3 外设域；与 LR1121 共用 SPI | 按项目目标使用 SSD16xx 2.9 寸配置；首次/唤醒/关键状态全刷，运行状态使用快刷且每 10 次快刷插入一次全刷；Sleep、释放 framebuffer/LVGL；面板型号和波形需实物确认 |
+| 2.9 寸电子纸 | BUSY=8、RESET=9、DC=17、CS=18 | GPIO38 经 Q3/Q1 控制共享 3V3 外设域；与 LR1121 共用 SPI | 按项目目标使用 SSD16xx 2.9 寸配置；首次/唤醒/关键状态全刷，运行状态使用快刷且每 10 次快刷插入一次全刷；Sleep、释放 framebuffer/LVGL |
 | WS2812 | GPIO21 | 由 GPIO38 控制的共享 3V3 域供电 | 红/绿/蓝测试后保持板级限定白光负载；休眠前关闭并随共享电源域断电 |
 | PCF85063A | I2C 0x51，INT=GPIO7 | I2C SDA=13、SCL=14；VDD 由 3V3/V_BAT 二极管或供电 | 时间无效或 VL 置位时写入固件编译时间并读回校验，已有有效时间保留；读取 INT 和 Control_2；休眠前停 1 Hz 定时器并清 IRQ |
 | AXP2602 | I2C 0x62，BAT_STAT=47、IRQ=48 | 无板级负载开关 | 电压/电流/SOC/温度、充电脚、IRQ 事件和 Sleep；保留句柄时 Wake，深睡复位后 init 清 Sleep 并恢复 Normal |
 | microSD | CMD=10、D0=11、CLK=12 | SDMMC 1-bit；由 GPIO38 控制的共享 3V3 域供电 | 不格式化、不写文件；挂载后只读前 1 MiB 并计算 CRC/吞吐，休眠前卸载并断电 |
-| USB Type-C | D-=GPIO19、D+=GPIO20，经 ESD/共模器件 | VBUS 同时进入板上供电/充电路径 | USB Serial/JTAG 控制台已配置；枚举、线缆和信号完整性需实物确认 |
-| EN 复位键 | EN，低有效，外部上拉和去抖电容 | 按下会复位整个 SoC | 不在自动流程中自触发；人工复位行为 NOT_TESTED |
-| VBUS/VBAT/3.3 V | 独立充电管理、VBAT 电量计、ESP_3V3 稳压与 Q3/Q1 共享外设电源路径 | GPIO38 可关闭 3V3 外设域，但不能关闭 ESP_3V3 主域、按键上拉和电池备份域 | AXP2602/BAT_STAT 可间接观测；充电、稳压和轨电流需电源仪器验证 |
+| USB Type-C | D-=GPIO19、D+=GPIO20，经 ESD/共模器件 | VBUS 同时进入板上供电/充电路径 | USB Serial/JTAG 控制台，使用支持数据传输的 USB 线连接 |
+| EN 复位键 | EN，低有效，外部上拉和去抖电容 | 按下会复位整个 SoC | 手动按下 RESET 使主控复位并重新运行启动流程 |
+| VBUS/VBAT/3.3 V | 独立充电管理、VBAT 电量计、ESP_3V3 稳压与 Q3/Q1 共享外设电源路径 | GPIO38 可关闭 3V3 外设域，但不能关闭 ESP_3V3 主域、按键上拉和电池备份域 | AXP2602/BAT_STAT 显示电量与充电状态；轨电流通过外接仪表测量 |
 | ESP32-S3 | 双核、N16R8 | 16 MB Flash、8 MB Octal PSRAM | 芯片信息、启动 RAM/PSRAM 自检、全 Flash 只读、RNG/PSA AES/SHA/定时器 |
 
 改造前目标示例的有效覆盖集中在板载外设 smoke test；本次新增了 ESP32-S3
@@ -72,7 +72,7 @@ id=S3-LR1121-XF seq=<递增序号> ms=<启动后毫秒> crc=<CRC32>
 ~~~
 
 TX 成功、超时或失败后都会立即恢复 RX。接收日志包含 payload、RSSI、SNR。
-RadioLib 7.7.1 的 LR11x0 getFrequencyError() 尚未实现，因此频偏明确显示
+RadioLib 7.7.1 的 LR11x0 getFrequencyError() 不提供有效频偏测量，因此频偏明确显示
 NOT_AVAILABLE，不会伪造测量值。没有第二台同参数设备时，LoRa 空口收发为
 NOT_TESTED。
 
@@ -258,8 +258,6 @@ LoRa TX/RX 计数和每个 PREPARE_SLEEP 步骤。状态含义：
 - FAIL：接口、数据校验或释放步骤失败；
 - NOT_TESTED：缺少 SD 卡、LoRa 对端、STA 凭据或测量条件。
 
-仅编译或源码检查通过不能证明硬件功能通过。没有实体板、LoRa 对端、Wi-Fi
-凭据和功耗仪时，开机自检、射频、按键、Deep-sleep 唤醒以及正常/低功耗电流
-均应保持 NOT_TESTED。复测时依次记录：启动日志与堆/栈余量、SoftAP 客户端、
-STA RSSI、两板 LoRa 双向收发、GPIO0 双击休眠和单击唤醒、唤醒后的完整恢复，
-最后在电源入口分别测量正常运行态与 LOW_POWER 稳态电流。
+运行时可依次检查：启动日志与堆/栈余量、SoftAP 客户端、STA RSSI、
+两板 LoRa 双向收发、GPIO0 双击休眠与单击唤醒，以及唤醒后的外设恢复。
+测量功耗时，在电源入口分别记录正常运行态与 LOW_POWER 稳态电流。

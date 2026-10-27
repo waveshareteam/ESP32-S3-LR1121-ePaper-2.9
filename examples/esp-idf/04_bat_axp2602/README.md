@@ -82,25 +82,22 @@ ESP32-S3 deep-sleep boot creates a new object during normal initialization.
 
 ## Build
 
-Each example keeps its generated `components/gen_bmgr_codes` sources in the
-project so a normal checkout is complete. A normal build does not require a
-Board Manager regeneration. After changing the shared board YAML files,
-regenerate the code from each affected example directory:
+Follow the [board preparation instructions](../README.md#board-manager-integration)
+to download `waveshare/waveshare_boards` and prepare the product board definition.
+Run from this example directory in Ubuntu Bash with ESP-IDF loaded:
 
-```text
+```bash
+python -m pip install esp-bmgr-assist==0.8.3
+idf.py bmgr -l
 idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
-```
-
-`esp_board_manager` 0.6.1 can rewrite the generated `.gitignore`, insert an
-environment-specific absolute board path, and replace `sdkconfig`. Before
-committing regenerated output, apply the portability and consistency checks in
-the repository root README.
-
-```text
-idf.py set-target esp32s3
-idf.py reconfigure
 idf.py build
+idf.py -p PORT flash monitor
 ```
+
+Replace `PORT` with the device serial port. Board selection generates
+`components/gen_bmgr_codes` locally. Keep generated sources, downloaded components
+and local board copies out of version control. Preserve deliberate `sdkconfig`
+changes before regenerating board code.
 
 GPIO47 is the authoritative charge-status input: high means charging and low
 means not charging. Internal pulls are disabled because the board signal is
@@ -114,7 +111,3 @@ intervals before continuing with an error display and log. The success page
 uses three 24-pixel rows so
 SOC, voltage, current, temperature, charge state, and the GPIO47 level remain
 readable.
-
-Hardware behavior still requires an AXP2602-equipped board. This migration has
-only been statically inspected; it has not been compiled, flashed, or validated
-with a battery and AXP2602 hardware.

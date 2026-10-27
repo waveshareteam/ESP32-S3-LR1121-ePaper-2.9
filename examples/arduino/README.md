@@ -52,6 +52,6 @@ Monitor at **115200 baud** to view the results.
 | `12_LoRaWAN_Class_C` | Receive LoRaWAN Class C downlinks |
 | `13_LoRaWAN_Multicast` | Receive LoRaWAN multicast messages |
 
-For SD examples, insert a FAT16/FAT32 microSD card before starting the board.
+For SD examples, insert a FAT32 microSD card before starting the board.
 For LoRaWAN examples, fill in the credentials in the example's configuration
 header and select the frequency region used by your network before uploading.

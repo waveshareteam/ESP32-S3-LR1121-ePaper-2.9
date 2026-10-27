@@ -9,14 +9,12 @@ the native 1-bit SDMMC interface:
 - CLK: GPIO12
 - switched 3.3 V rail enable: GPIO38, active high
 
-The pin map is consistent between the existing comprehensive example and the
-supplied Rev1.1 schematic. The schematic remains under `pending-review`
-because of an unrelated e-paper connector label, so compilation is not a
-substitute for final schematic approval or a physical-card test.
+The pin map follows the
+[Rev1.1 schematic](../../../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf).
 
 ## Card preparation and data impact
 
-Insert a microSD card formatted as FAT16 or FAT32 before boot. The example
+Insert a microSD card formatted as FAT32 before boot. The example
 never formats the card. It lists at most 16 root entries, then uses only:
 
 `/ws_sd/test.txt`
@@ -38,8 +36,8 @@ loss during the test can leave this explicit path on the card.
 ## Build and run
 
 First follow the [board preparation instructions](../README.md#board-manager-integration).
-This example now requires `waveshare/waveshare_boards` and generated
-`components/gen_bmgr_codes`, just like the other numbered examples.
+Use `waveshare/waveshare_boards` and generate `components/gen_bmgr_codes`
+before building.
 
 Ubuntu Bash, with the selected ESP-IDF environment loaded, from the repository root:
 
@@ -94,9 +92,9 @@ If task allocation fails, the example reports failure without running on main.
 GPIO11/D0、GPIO12/CLK。现已接入 Board Manager，必须先下载板级组件、
 准备板型并执行 `idf.py bmgr -b esp32_s3_lr1121_epaper_2_9` 生成配置。
 共享供电 GPIO 通过 Board Manager 的 `gpio_epaper_power` 获取，当前板型为
-GPIO38，高电平打开卡槽所在的 3.3 V 供电域。SDMMC 挂载和文件操作仍使用
-ESP-IDF 原生接口；当前组件尚无 SDMMC 外设定义，CMD/D0/CLK 保留在应用中。
-请在上电前插入 FAT16 或 FAT32 格式的卡；程序不会格式化存储卡。
+GPIO38，高电平打开卡槽所在的 3.3 V 供电域。SDMMC 挂载和文件操作使用
+ESP-IDF 原生接口，CMD/D0/CLK 引脚在应用中配置。
+请在上电前插入 FAT32 格式的卡；程序不会格式化存储卡。
 
 墨水屏使用 8×14 粗体横屏显示卡容量、挂载、读写校验和卸载状态，标题从
 `SD TEST` 更新为 `SD PASS` 或 `SD FAIL`。卸载 SD 卡后才刷新最终结果，
@@ -117,5 +115,4 @@ SD 测试，串口 `DISPLAY` 单独报告屏幕状态，`FINAL` 表示 SD 测试
 程序不会覆盖同名文件；
 写入并逐字节读回校验后会删除测试文件，只在本次创建目录时删除目录。
 若测试期间掉电或复位，该明确路径可能残留。串口出现 `FINAL: PASS`
-表示本次软件流程完成；仓库原理图仍在待审目录，且编译不能替代 SD 实卡
-和最终硬件资料确认。
+表示本次 SD 卡读写、清理和卸载流程完成。

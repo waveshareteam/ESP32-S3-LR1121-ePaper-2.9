@@ -72,5 +72,4 @@ match the RED, GREEN, and BLUE log messages before relying on the breathing
 effect's hue sequence.
 
 For the 5.5 and 6.2 build results and their board-definition prerequisites, see
-[framework compatibility](../../../docs/idf-compatibility.md). Hardware color
-and power sequencing tests remain to be run on the board.
+[framework compatibility](../../../docs/idf-compatibility.md).

@@ -5,7 +5,7 @@ core `SD_MMC` library in 1-bit mode. It uses GPIO10/CMD, GPIO11/D0,
 GPIO12/CLK, and enables the switched 3.3 V rail with GPIO38.
 
 Use the repository's documented ESP32S3 Dev Module options and Arduino-ESP32
-3.3.11. Insert a FAT16 or FAT32 microSD card before reset, open
+3.3.11. Insert a FAT32 microSD card before reset, open
 `07_sd_card.ino`, then verify/upload and monitor at 115200 baud.
 
 The sketch never formats the card. It lists at most 16 root entries and uses
@@ -41,9 +41,8 @@ microSD 卡槽。引脚为 GPIO10/CMD、GPIO11/D0、GPIO12/CLK，GPIO38 高电�
 `Unmount: done`。显示失败不会中断 SD 测试，串口 `DISPLAY` 单独报告屏幕
 状态，`FINAL` 表示 SD 测试结果。
 
-请在复位前插入 FAT16 或 FAT32 格式的卡，串口波特率为 115200。程序不会
+请在复位前插入 FAT32 格式的卡，串口波特率为 115200。程序不会
 格式化存储卡，只使用 `/waveshare_sd_test/roundtrip.txt`，且不会覆盖
 已存在的同名文件。写入、刷新和逐字节读回校验后会清理测试文件、卸载
 文件系统并关闭供电。掉电或复位可能留下该明确路径。`FINAL: PASS`
-仅表示本次软件流程完成，不代表当前待审原理图已最终确认或所有存储卡
-均已通过实板验证。
+表示本次 SD 卡读写、清理和卸载流程完成。
