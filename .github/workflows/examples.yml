@@ -179,7 +179,7 @@ jobs:
       matrix: ${{ fromJSON(needs.discover-esp-idf.outputs.experimental_matrix) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install pinned experimental SDK
