@@ -48,19 +48,20 @@ ESP-IDF 与 Arduino 各有 13 个示例，目录见根 README 的对照表。
 - [ESP-IDF 09 综合测试](../examples/esp-idf/09_comprehensive_demo/README.md)
 - [ESP-IDF 07 SD 卡、显示与长文件名设置](../examples/esp-idf/07_sd_card/README.md)
 - [Arduino 07 SD 卡操作与显示](../examples/arduino/07_sd_card/README.md)
-- [硬件原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF.pdf)
+- [硬件原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf)
 - [HF/LF 参考固件及校验值](../firmware/README.md)
 
 ## 需要写清楚的操作
 
 Arduino 选择 ESP32S3 Dev Module、16 MB Flash、OPI PSRAM、USB CDC On Boot
-Enabled、Hardware CDC and JTAG。更新随仓库提供的 `Waveshare_LR1121_EPaper`
-库后再编译；旧库副本会继续显示旧字体。所有墨水屏文字改为 Terminus Bold
+Enabled、Hardware CDC and JTAG。将 IDE 首选项中的“项目文件夹位置”设置为
+本仓库的 `examples/arduino` 目录并重启 IDE，直接使用 `libraries` 下随附的
+库，无需另行下载或复制。所有墨水屏文字使用 Terminus Bold
 8×14，长文本省略显示，综合示例采用双列状态格和底部 LoRa 计数。
 
 综合示例中 GPIO1 稳定按下一次发送一帧；GPIO0 双击休眠，深睡时单击唤醒。
 启动和唤醒均重新自检。Wi-Fi、LoRa 参数集中在各自的 `main/app_config.h`
-或 `app_config.h`；截图和手册不包含真实凭据。2.13 寸配置采用较短的界面提示。
+或 `app_config.h`；截图和手册不包含真实凭据。
 
 ESP-IDF 源码不包含 `build`、`managed_components`、`sdkconfig`、锁文件和
 `components/gen_bmgr_codes`，也不保存本地 `boards` 副本。先在所选示例目录执行：

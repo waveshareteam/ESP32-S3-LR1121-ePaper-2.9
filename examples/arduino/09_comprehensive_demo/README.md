@@ -1,13 +1,13 @@
 # 09 综合测试（Arduino）
 
-本示例与 ESP-IDF 09 对齐主要功能和操作：上电/唤醒自检 → `BOARD TEST`
+本示例演示板载外设综合测试：上电/唤醒自检 → `BOARD TEST`
 结果页（停留 2 秒）→ `RUNTIME` 持续负载；GPIO1 每次稳定按下发送一帧 LoRa，
 GPIO0 双击进入深睡，深睡时 GPIO0 单击唤醒并重新初始化。
 
 ## 编译与配置
 
-沿用上级 README 的 Arduino-ESP32 3.3.11、RadioLib 7.7.1，以及
-`Waveshare_LR1121_EPaper` 库。选择 ESP32S3 Dev Module、16 MB Flash、
+按[Arduino 使用说明](../README.md)设置 IDE 的项目文件夹位置并重启，
+使用随附库和 Arduino-ESP32 3.3.11。选择 ESP32S3 Dev Module、16 MB Flash、
 OPI PSRAM、USB CDC On Boot Enabled、Hardware CDC and JTAG。
 默认分区可编译；增加其他功能导致空间不足时，可选
 `16M Flash (3MB APP/9.9MB FATFS)`。
@@ -46,9 +46,9 @@ arduino-cli compile \
 两次刷新之间至少间隔 2 秒。首次、结果页、唤醒和睡眠提示全刷，其余采用快刷
 并按驱动上限自动插入全刷。
 
-界面使用与 ESP-IDF 相同的 Terminus Bold 8x14 黑白字模，正文比原先的 5x7
-更清楚。运行页为三行双列状态格和底部 LoRa 十六进制计数（T=成功发送，
-F=发送失败/请求拒绝，R=接收成功）。2.13 寸屏使用缩写，完整日志在串口。
+界面使用 Terminus Bold 8x14 黑白字模。运行页为三行双列状态格和底部
+LoRa 十六进制计数（T=成功发送，F=发送失败/请求拒绝，R=接收成功），
+完整日志在串口输出。
 
 ## 按键和休眠
 
@@ -63,13 +63,3 @@ GPIO1 长按只触发一次。启动时已按住的按键须先释放再按下�
 
 若开始关断后某个关键步骤失败，串口记录错误，软件复位重建全部服务，
 避免在仅部分设备已关闭时继续运行。GPIO0 是启动配置脚，复位时不要一直按住。
-
-## 与 ESP-IDF 的实现差异和验证边界
-
-- Arduino 使用原生屏幕渲染、Arduino 外设库和 FreeRTOS；不使用 Board Manager/LVGL。
-- 启动自检顺序执行，完成后才启动运行服务；ESP-IDF 可并行刷新启动页与自检。
-- 使用 Arduino 核心的 mbedTLS 完成 AES/SHA 测试；ESP-IDF 版本使用 PSA。
-- LED、USB 枚举、复位键、电源电流及真实 Wi-Fi 吞吐仍需人工或仪器验证。
-- 编译和主机测试不能验证射频共存、真实按键时序、面板波形或深睡电流。
-
-本示例不再写入旧仪表盘的 NVS 启动次数。

@@ -9,7 +9,7 @@ product_images:
 
 hardware_documents:
   schematic:
-    path: "../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF.pdf"
+    path: "../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf"
     pcb_identifier: "ESP32-S3-LR1121-ePaper-2.9-XF"
     document_revision: "Rev1.1"
     status: "pending-review"
