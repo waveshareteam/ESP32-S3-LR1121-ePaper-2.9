@@ -3,7 +3,7 @@
 > 历史资料草稿：部分路径、编号和测试状态已变化。编写使用手册时以 [当前交接说明](manual-handoff.zh-CN.md)、示例 README 和源码为准；本草稿中的旧构建失败记录不代表当前状态。
 
 本文是 Wiki 和产品详情页的唯一规格基线。每项内容必须能追溯到仓库资料、
-实物图、待审原理图或用户提供的测试记录。证据冲突时以“待确认”处理，不从
+实物图、原理图或用户提供的测试记录。证据冲突时以“待确认”处理，不从
 相近产品参数推断本产品规格。
 
 ## 状态定义
@@ -18,9 +18,9 @@
 | 项目 | 当前结论 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 产品名称 | ESP32-S3-LR1121-ePaper-2.9 | 已确认 | `README_ZH.md`、`docs/product-metadata.yml`、PCB 丝印 |
-| 产品版本 | 1.0.0 | 已确认 | `docs/product-metadata.yml`、板级 `board_info.yaml` |
-| PCB/图纸标识 | ESP32-S3-LR1121-ePaper-2.9-XF | 实现参考 | 背面实物图、待审原理图标题栏 |
-| 原理图版本 | Rev1.1 | 待确认 | `docs/product-metadata.yml`；当前 PDF 仍在 `pending-review` |
+| 产品版本 | 1.1 | 已确认 | `HARDWARE_REFERENCE.md`、`docs/product-metadata.yml` |
+| PCB/图纸标识 | ESP32-S3-LR1121-ePaper-2.9-XF | 实现参考 | 背面实物图、原理图标题栏 |
+| 原理图版本 | Rev1.1 | 已确认 | `hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf` |
 | 主控模组 | ESP32-S3-WROOM-1-N16R8 | 已确认 | `config/ci.json`、背面实物图、Arduino 配置说明 |
 | Flash | 16 MB | 已确认 | N16R8 型号、Arduino FQBN 的 `FlashSize=16M` |
 | PSRAM | 8 MB OPI PSRAM | 已确认 | N16R8 型号、Arduino FQBN 的 `PSRAM=opi` |
@@ -38,10 +38,6 @@
 | 刷新策略 | 首帧全刷，最多 10 次 FAST 全屏刷新后再次全刷 | 实现参考 | `examples/esp-idf/README.md` |
 | 断电保持画面 | 电子纸物理特性 | 芯片/面板能力 | 产品级保持时间和环境条件待面板规格书确认 |
 
-注意：待审原理图右下角把连接器块写成 `2.13inch e-Paper`，与图纸标题、
-PCB `296x128 Pixels` 丝印和 2.9 英寸驱动配置冲突。在收到修正版原理图前，
-不得把该 PDF 作为公开的最终工程图。
-
 ## LR1121 与射频路径
 
 | 项目 | 当前结论 | 状态 | 证据 |
@@ -50,7 +46,7 @@ PCB `296x128 Pixels` 丝印和 2.9 英寸驱动配置冲突。在收到修正版
 | 主用示例频段 | EU868，示例基线 868.0 MHz | 实现参考 | Ping-Pong/LoRaWAN 配置、用户 ChirpStack 日志 |
 | LR1121 芯片能力 | Sub-GHz、1.9–2.1 GHz S 频段、2.4 GHz ISM；LoRa、(G)FSK、LR-FHSS | 芯片能力 | 微雪 ESP32-S3-LR1121-XF Wiki；本板匹配范围仍待确认 |
 | 本板已匹配频段 | 至少包含 EU868 使用路径 | 用户提供，待复测 | `log.json` 中 867.1–868.5 MHz 收发记录；不能由此推导完整带宽 |
-| 射频接口 | 实物和待审图显示 LoRa ANT 与 2.4G ANT 两路天线接口 | 实现参考 | 背面实物图、待审原理图 |
+| 射频接口 | 实物和原理图显示 LoRa ANT 与 2.4G ANT 两路天线接口 | 实现参考 | 背面实物图、原理图 |
 | 接口形式 | 外观看似 IPEX/U.FL 类微型同轴座 | 待确认 | 必须由 BOM/料号或正式规格确认，不按外观定型 |
 | Sub-GHz 发射路径 | 示例强制选择 LR1121 高功率 PA 路径 | 实现参考 | Arduino/ESP-IDF 的 `forceHighPower=true` 适配 |
 | RF 开关 | LR1121 DIO5/DIO6 控制，TX HP 为 LOW/HIGH | 实现参考 | `board_radio.cpp` RF switch table |
@@ -91,7 +87,7 @@ PCB `296x128 Pixels` 丝印和 2.9 英寸驱动配置冲突。在收到修正版
 | --- | --- | --- |
 | 主供电入口 | USB Type-C 或板载电池接口 | 实现参考 |
 | 3.3 V 电源 | 原理图显示独立 3.3 V 稳压路径 | 待正式原理图确认 |
-| 充电芯片 | 待审图显示 ETA6098 | 待确认，不在公开参数中写入 |
+| 充电芯片 | 原理图显示 ETA6098 | 待确认，不在公开参数中写入 |
 | 电量计 | AXP2602，I2C 0x62 | 已由代码和 I2C 示例确认 |
 | 电量计采样电阻 | Board YAML 暂配 10 mΩ | 待确认；仓库明确要求核对实装值与方向 |
 | 电池规格 | 锂电池电压、容量、保护要求、插座极性均待确认 | 待确认 |

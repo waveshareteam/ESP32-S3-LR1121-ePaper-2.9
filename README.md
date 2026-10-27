@@ -5,6 +5,8 @@
 This repository contains ESP-IDF and Arduino examples and hardware documentation
 for the Waveshare ESP32-S3-LR1121-ePaper-2.9.
 
+![Waveshare ESP32-S3-LR1121-ePaper-2.9](docs/images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp)
+
 ## Getting started
 
 - ESP-IDF projects: [`examples/esp-idf/`](examples/esp-idf/)
@@ -13,8 +15,8 @@ for the Waveshare ESP32-S3-LR1121-ePaper-2.9.
 - CI documentation: [`docs/ci.md`](docs/ci.md)
 - Firmware packages: [`releases/`](releases/)
 
-Each numbered directory contains an example project. All ESP-IDF examples,
-including 07, use `esp_board_manager` through `waveshare/waveshare_boards`.
+Each numbered directory contains an example project. All ESP-IDF examples use
+`esp_board_manager` through `waveshare/waveshare_boards`.
 Follow the [board preparation instructions](examples/esp-idf/README.md#board-manager-integration)
 to generate the board configuration before building.
 

@@ -1,6 +1,6 @@
 product:
   name: "ESP32-S3-LR1121-ePaper-2.9"
-  revision: "1.0.0"
+  revision: "1.1"
 
 product_images:
   front: null
@@ -12,8 +12,6 @@ hardware_documents:
     path: "../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf"
     pcb_identifier: "ESP32-S3-LR1121-ePaper-2.9-XF"
     document_revision: "Rev1.1"
-    status: "pending-review"
-    known_issue: "The e-paper connector block is labeled 2.13inch e-Paper while the drawing title identifies a 2.9 product."
   dimensions:
     status: "pending"
     placeholder: null

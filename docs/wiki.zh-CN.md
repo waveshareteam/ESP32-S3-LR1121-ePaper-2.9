@@ -23,7 +23,6 @@ TF 卡、WS2812、按键和扩展接口，适合周期采集、远程状态显�
 
 ### 当前资料提示
 
-- 仓库现有原理图处于待审状态，其中电子纸连接器块存在 2.13/2.9 英寸标注冲突。
 - 机械尺寸图尚未提供，本文不从照片估算长宽、孔位或高度。
 - 正面实物图的显示内容包含 Join EUI，公开发布前需脱敏或确认标识符可公开。
 - 仓库整理时未完成编译、烧录和实板验证；本文会区分“代码支持”和“硬件实测”。
@@ -317,8 +316,7 @@ RadioLib 的框架头 `Arduino.h` 时失败，因此不能把该检查标为通�
 ### 电子纸没有刷新或 BUSY 超时怎么办？
 
 确认启用 2.9 英寸型号、GPIO38 为高、BUSY=GPIO8 且高电平表示忙；检查
-RST/DC/CS 和共享 SPI 是否被 LR1121 长时间占用。不要按待审原理图中的
-“2.13inch”标签切换驱动。
+RST/DC/CS 和共享 SPI 是否被 LR1121 长时间占用。
 
 ### I2C 扫描不到设备怎么办？
 
@@ -353,7 +351,7 @@ RF switch 和 TCXO。当前 TCXO 电压资料有冲突，不要反复盲改电�
 | Arduino 示例 | `examples/arduino/` | 已提供，待编译/实板验证 |
 | ESP-IDF 示例 | `examples/esp-idf/` | 已提供，存在已知依赖缺口 |
 | 产品正反面图 | `assets/product/` | 已提供，正面图待标识符审核 |
-| 原理图 | `hardware/schematics/pending-review/` | 待审，不作为最终公开图 |
+| 原理图 | [产品原理图](../hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf) | Rev1.1 |
 | 尺寸图 | `hardware/dimensions/` | 待补 |
 | 工厂/恢复固件 | `firmware/` | 待补 |
 | 固件打包工具 | `releases/` | 已提供，未发布成品 |

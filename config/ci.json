@@ -2,7 +2,7 @@
   "schema_version": 1,
   "board": {
     "name": "ESP32-S3-LR1121-ePaper-2.9",
-    "revision": "1.0.0",
+    "revision": "1.1",
     "module": "ESP32-S3-WROOM-1-N16R8",
     "target": "esp32s3"
   },

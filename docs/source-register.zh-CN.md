@@ -13,7 +13,7 @@
 | `examples/arduino/README.md` | Arduino 环境、引脚、依赖、预期日志 | 实现参考，不替代正式规格 |
 | `examples/esp-idf/README.md` | Board Manager、刷新策略、构建命令 | IDF 分支仍需真实构建验证 |
 | `examples/esp-idf/components/waveshare_esp_boards/.../*.yaml` | 总线、设备和 GPIO | 由现有示例迁移，未证明实装料号 |
-| `hardware/schematics/pending-review/*.pdf` | 核对网络与器件关系 | 2.13/2.9 标注冲突，不得作为最终公开图 |
+| `hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf` | 核对网络与器件关系 | Rev1.1，2.9 英寸产品原理图 |
 | `assets/product/front.png` / `back.png` | 真实产品外观 | 正面图含 Join EUI，公开前需标识符审核 |
 | 工作区根目录 `log.json` | ChirpStack EU868 实测背景 | 用户文件，不纳入仓库，不公开设备标识 |
 

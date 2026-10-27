@@ -5,6 +5,8 @@
 本仓库提供 Waveshare ESP32-S3-LR1121-ePaper-2.9 的 ESP-IDF 示例、
 Arduino 示例和硬件资料。
 
+![Waveshare ESP32-S3-LR1121-ePaper-2.9](docs/images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp)
+
 ## 快速入口
 
 - ESP-IDF 项目：[`examples/esp-idf/`](examples/esp-idf/)
@@ -13,7 +15,7 @@ Arduino 示例和硬件资料。
 - CI 说明：[`docs/ci.md`](docs/ci.md)
 - 固件打包工具：[`releases/`](releases/)
 
-每个编号目录包含一个示例项目。所有 ESP-IDF 示例（包括 07）均通过
+每个编号目录包含一个示例项目。所有 ESP-IDF 示例均通过
 `waveshare/waveshare_boards` 使用 `esp_board_manager`。编译前请按
 [板型准备说明](examples/esp-idf/README.md#board-manager-integration)生成板级配置。
 
