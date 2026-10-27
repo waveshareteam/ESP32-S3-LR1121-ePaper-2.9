@@ -2,22 +2,8 @@
 
 [中文](README_ZH.md)
 
-This repository contains first-party ESP-IDF and Arduino examples, product
-images, and hardware documentation for the Waveshare
-ESP32-S3-LR1121-ePaper-2.9, product revision 1.0.0.
-
-## Repository status
-
-The source examples are organized as matching ESP-IDF and Arduino surfaces,
-including a standalone 1-bit SDMMC card test. The CI and firmware packaging
-definitions cover every first-party example. Compilation and CI do not replace
-flashing and physical-board validation.
-
-The supplied schematic is in `hardware/schematics/`; its connector label
-still needs panel-revision review. HF/LF binary references are in `firmware/`.
-Product images and mechanical drawings are not included in this snapshot.
-Use the [manual handoff](docs/manual-handoff.zh-CN.md) for current numbering,
-setup instructions and validation limits.
+This repository contains ESP-IDF and Arduino examples and hardware documentation
+for the Waveshare ESP32-S3-LR1121-ePaper-2.9.
 
 ## Getting started
 
@@ -27,8 +13,14 @@ setup instructions and validation limits.
 - CI documentation: [`docs/ci.md`](docs/ci.md)
 - Firmware packages: [`releases/`](releases/)
 
-Each numbered example is independent. Read the framework README and the README
-inside the selected example before building or flashing it.
+Each numbered directory contains an example project. All ESP-IDF examples,
+including 07, use `esp_board_manager` through `waveshare/waveshare_boards`.
+Follow the [board preparation instructions](examples/esp-idf/README.md#board-manager-integration)
+to generate the board configuration before building.
+
+For Arduino, set the IDE's **Sketchbook location** to this repository's
+`examples/arduino` folder and restart the IDE to use the bundled libraries.
+Read the selected example's README for its configuration and operation.
 
 ## Examples
 
@@ -40,7 +32,7 @@ inside the selected example before building or flashing it.
 | 04 | `04_bat_axp2602` | `04_bat_axp2602` | AXP2602 battery gauge |
 | 05 | `05_rtc_pcf85063` | `05_rtc_pcf85063` | PCF85063A RTC |
 | 06 | `06_lr1121_pingpong` | `06_lr1121_pingpong` | LR1121 ping-pong |
-| 07 | `07_sd_card` | `07_sd_card` | microSD 1-bit SDMMC read/write test |
+| 07 | `07_sd_card` | `07_sd_card` | microSD 1-bit SDMMC read/write test with e-paper status |
 | 08 | `08_deep_sleep` | `08_deep_sleep` | Deep sleep |
 | 09 | `09_comprehensive_demo` | `09_comprehensive_demo` | Integrated board demo |
 | 10 | `10_lr1121_lorawan` | `10_lr1121_lorawan` | LoRaWAN Class A OTAA |
@@ -48,28 +40,26 @@ inside the selected example before building or flashing it.
 | 12 | `12_LoRaWAN_Class_C` | `12_LoRaWAN_Class_C` | LoRaWAN Class C |
 | 13 | `13_LoRaWAN_Multicast` | `13_LoRaWAN_Multicast` | LoRaWAN multicast |
 
-LoRaWAN examples contain placeholder credentials. Configure credentials,
-region, frequency plan, antenna, and transmit power for the deployment before
-radio activation. Never publish real network keys in source code or logs.
+Before running a LoRaWAN example, enter your network credentials in its
+configuration header and set the region, frequency plan, antenna, and transmit
+power for your deployment.
 
-## Continuous integration and Releases
+## CI and firmware packaging
 
-The GitHub Actions workflow discovers direct first-party examples and is
-configured for stable ESP-IDF v5.5.6 and Arduino-ESP32 3.3.11, with a separate
-experimental ESP-IDF 6.2 job pinned to SDK commit `08e0d30a`. All 13 ESP-IDF
-examples, including 09, support both the 5.5 and 6.2 validation environments.
-See [framework compatibility](docs/idf-compatibility.md) for exact versions and
-verification limits. Board definitions come from `waveshare/waveshare_boards`;
-until that component publishes this product, follow the
-[manual board preparation](examples/esp-idf/README.md#board-manager-integration).
-Stable builds produce flashable ZIP archives containing a
-manifest, SHA-256 checksums, source binary segments, a combined image, and
-Windows/POSIX flash helpers. A `v*` tag is designed to publish those archives
-as a GitHub Release.
+The build matrix in [`config/ci.json`](config/ci.json) contains:
 
-These configurations are statically checked only until they run in a real
-remote repository. CI compilation does not prove radio, display, power,
-sleep, timing, or other physical hardware behavior.
+| Framework | Version |
+| --- | --- |
+| ESP-IDF | v5.5.6 |
+| ESP-IDF development build | v6.2.0-dev, SDK commit `08e0d30a` |
+| Arduino-ESP32 | 3.3.11 |
+
+The workflow in [`.github/workflows/examples.yml`](.github/workflows/examples.yml)
+discovers the numbered examples and defines their build jobs. The packaging
+tools in [`releases/`](releases/) create ZIP archives containing a manifest,
+SHA-256 checksums, binary segments, a combined image, and Windows/POSIX flash
+helpers. The workflow configures GitHub Release publication for `v*` tags
+when the firmware artifact set passes its checks.
 
 ## Repository layout
 
@@ -77,21 +67,20 @@ sleep, timing, or other physical hardware behavior.
 | --- | --- |
 | `examples/esp-idf/` | First-party ESP-IDF projects |
 | `examples/arduino/` | First-party Arduino sketches and bundled library |
-| `hardware/` | Schematics and mechanical-document placeholders |
+| `hardware/` | Schematics and hardware documentation |
 | `config/` | Machine-readable CI configuration |
 | `scripts/` | Example discovery and static automation |
 | `releases/` | Source-build firmware packaging |
 | `firmware/` | Supplied HF/LF binary references |
 | `docs/` | Repository and maintainer documentation |
 
-See [`docs/repository-structure.md`](docs/repository-structure.md) for
-generated-file and publication boundaries.
+See [`docs/repository-structure.md`](docs/repository-structure.md) for directory
+and generated-file management.
 
 ## Hardware documents
 
 - Schematic: [`hardware/schematics/`](hardware/schematics/)
 - Firmware references: [`firmware/`](firmware/)
-- Product images and mechanical drawings: awaiting source material.
 
 ## Support and contribution
 
@@ -100,7 +89,9 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SUPPORT.md`](SUPPORT.md), and
 
 ## License
 
-Original software is licensed under Apache License 2.0. Original
+Copyright 2026 Waveshare.
+
+Original software is licensed under [Apache License 2.0](LICENSE). Original
 documentation, images, schematics, and hardware materials are licensed under
 CC BY 4.0. Nested third-party licenses remain authoritative. See
 the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/) and
