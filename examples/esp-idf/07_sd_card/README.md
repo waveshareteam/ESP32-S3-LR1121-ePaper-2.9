@@ -14,7 +14,7 @@ The pin map follows the
 
 ## Card preparation and data impact
 
-Insert a microSD card formatted as FAT16 or FAT32 before boot. The example
+Insert a microSD card formatted as FAT32 before boot. The example
 never formats the card. It lists at most 16 root entries, then uses only:
 
 `/ws_sd/test.txt`
@@ -94,7 +94,7 @@ GPIO11/D0、GPIO12/CLK。现已接入 Board Manager，必须先下载板级组�
 共享供电 GPIO 通过 Board Manager 的 `gpio_epaper_power` 获取，当前板型为
 GPIO38，高电平打开卡槽所在的 3.3 V 供电域。SDMMC 挂载和文件操作使用
 ESP-IDF 原生接口，CMD/D0/CLK 引脚在应用中配置。
-请在上电前插入 FAT16 或 FAT32 格式的卡；程序不会格式化存储卡。
+请在上电前插入 FAT32 格式的卡；程序不会格式化存储卡。
 
 墨水屏使用 8×14 粗体横屏显示卡容量、挂载、读写校验和卸载状态，标题从
 `SD TEST` 更新为 `SD PASS` 或 `SD FAIL`。卸载 SD 卡后才刷新最终结果，
