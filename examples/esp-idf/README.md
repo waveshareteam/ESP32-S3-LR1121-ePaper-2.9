@@ -22,11 +22,9 @@ and uses its native `led_strip` handle for color updates.
 
 ## Board Manager integration
 
-All examples 01–13 depend on `waveshare/waveshare_boards`, which brings in
-`espressif/esp_board_manager` transitively. Example 07 uses Board Manager for
-the shared power GPIO, SPI bus, and e-paper configuration, and native SDMMC/FATFS
-for card operations. Install the
-bootstrap helper in the active IDF environment:
+All examples depend on `waveshare/waveshare_boards >=0.1.3`, which supplies
+the product board definition and brings in `espressif/esp_board_manager`
+transitively. Install the bootstrap helper in the active IDF environment:
 
 ```bash
 python -m pip install esp-bmgr-assist==0.8.3
@@ -39,20 +37,10 @@ registry boards without a preceding `idf.py reconfigure`:
 idf.py bmgr -l
 ```
 
-Board definitions belong to `waveshare/waveshare_boards`; this repository does
-not include a `boards` directory or another local copy. The downloaded 0.1.2
-package does not contain `esp32_s3_lr1121_epaper_2_9` yet. Until a component
-release includes it, manually copy the matching board folder supplied by the
-board-package maintainer into this example's downloaded component:
-
-```text
-managed_components/waveshare__waveshare_boards/boards/esp32_s3_lr1121_epaper_2_9/
-```
-
-The folder must include `board_info.yaml`, `board_peripherals.yaml`, and
-`board_devices.yaml`. Repeat this local preparation for each example that uses
-Board Manager, and after deleting or replacing downloaded components. Once the
-published component includes the board, this manual step is unnecessary.
+Board definitions are supplied by the published `waveshare/waveshare_boards`
+component, version 0.1.3 or later, including `esp32_s3_lr1121_epaper_2_9`.
+The component is downloaded automatically; no manual board-folder copying is
+needed. This repository does not include a `boards` directory or another local copy.
 
 Then list and select the board from the component and build:
 
@@ -63,10 +51,8 @@ idf.py build
 ```
 
 `components/gen_bmgr_codes`, downloaded components, lock files and build outputs
-are intentionally omitted. Do not commit the manually copied board folder or
-generated sources. Example 07 also requires these Board Manager steps.
-Unattended CI requires a published component containing this board; it reports
-a missing-board error until that component is available.
+are intentionally omitted and must not be committed. CI downloads the same
+component and checks that the product board definition is present before generation.
 
 All 13 examples declare IDF >=5.5.0,<6.3.0 and target ESP32-S3. Use the stable
 5.5 toolchain for the user manual; 6.2 compatibility is checked against a pinned
@@ -131,7 +117,7 @@ Regenerate after updating the board definition in the downloaded component or
 after cleaning the generated component. Run the selection command above from
 each affected example directory.
 The generator can replace `sdkconfig`, so preserve deliberate configuration
-changes first. Generated files and manually supplied board YAML stay local.
+changes first. Generated files and downloaded components stay local.
 Maintain board-definition changes in the separate board-package repository.
 
 ## Hardware checks

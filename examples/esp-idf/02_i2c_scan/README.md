@@ -5,14 +5,10 @@ Scan the shared I2C bus for the PCF85063A RTC and AXP2602 fuel gauge.
 ## Build
 
 Follow the [board preparation instructions](../README.md#board-manager-integration).
-The published `waveshare/waveshare_boards` 0.1.2 package does not contain
-`esp32_s3_lr1121_epaper_2_9` yet. Download dependencies with `idf.py bmgr -l`,
-then manually copy the matching board folder into
-`managed_components/waveshare__waveshare_boards/boards/`. Once the component
-publishes this board, that manual step is unnecessary.
+The published `waveshare/waveshare_boards >=0.1.3` component includes
+`esp32_s3_lr1121_epaper_2_9`. `idf.py bmgr -l` downloads it automatically.
 
-In an activated ESP-IDF terminal, run from this example directory (Ubuntu Bash)
-after the board definition is available:
+In an activated ESP-IDF terminal, run from this example directory (Ubuntu Bash):
 
 ```sh
 idf.py bmgr -l
@@ -45,4 +41,4 @@ download workflow and load the Board Manager extension before listing boards.
 For an ordinary clean rebuild, retain `components/gen_bmgr_codes` and run
 `idf.py fullclean` followed by `idf.py build`. After removing generated sources,
 select the board again. After removing or updating downloaded components,
-repeat the board preparation step if the component still lacks this product.
+list and select the board again using the commands above.

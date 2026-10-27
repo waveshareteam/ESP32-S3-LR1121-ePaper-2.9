@@ -43,12 +43,12 @@ The component manifests select:
 
 - ESP-IDF `>=5.5.0,<6.3.0`; see [framework compatibility](../../../docs/idf-compatibility.md).
 - `jgromes/radiolib` 7.7.1, pinned exactly by this example.
-- `waveshare/waveshare_boards`, which supplies Board Manager transitively.
+- `waveshare/waveshare_boards >=0.1.3`, which supplies Board Manager transitively.
 - The project-local e-paper driver/font and their managed dependencies.
 
 The board definition is supplied through the downloaded Waveshare component.
 Follow the [board preparation instructions](../README.md#board-manager-integration)
-for the temporary manual-copy step until the component publishes this product.
+to download the component and generate the board configuration.
 
 The implementation uses the RadioLib 7.7.1 APIs verified in the local component
 source: `LR1121`, `LoRaWANNode`, `beginOTAA()`, `activateOTAA()`,

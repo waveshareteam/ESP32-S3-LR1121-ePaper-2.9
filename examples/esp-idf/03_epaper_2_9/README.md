@@ -16,8 +16,8 @@ idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
 
-串口设备需按实际连接替换。板型从下载的 `waveshare/waveshare_boards` 组件读取；
-组件内手动补入的板型和生成的 `components/gen_bmgr_codes/` 均不提交。
+串口设备需按实际连接替换。板型从自动下载的 `waveshare/waveshare_boards >=0.1.3` 组件读取；
+下载组件和生成的 `components/gen_bmgr_codes/` 均不提交。
 
 ## 显示模式
 

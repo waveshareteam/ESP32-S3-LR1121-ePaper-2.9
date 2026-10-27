@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -24,8 +25,14 @@ class ExamplesWorkflowTests(unittest.TestCase):
         self.assertIn("python3 releases/validate_release_artifacts.py release-artifacts", workflow)
 
         release_section = workflow.split("  release:\n", 1)[1]
+        checkout = re.search(
+            r"^      - uses: actions/checkout@[^\s]+(?:\s+#.*)?$",
+            release_section,
+            re.MULTILINE,
+        )
+        self.assertIsNotNone(checkout, "Release job must check out the repository")
         self.assertLess(
-            release_section.index("actions/checkout@v4"),
+            checkout.start(),
             release_section.index("releases/validate_release_artifacts.py"),
         )
 
