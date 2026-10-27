@@ -83,7 +83,7 @@ ESP32-S3 deep-sleep boot creates a new object during normal initialization.
 ## Build
 
 Follow the [board preparation instructions](../README.md#board-manager-integration)
-to download `waveshare/waveshare_boards` and prepare the product board definition.
+to download `waveshare/waveshare_boards >=0.1.3`, which includes the product board definition.
 Run from this example directory in Ubuntu Bash with ESP-IDF loaded:
 
 ```bash

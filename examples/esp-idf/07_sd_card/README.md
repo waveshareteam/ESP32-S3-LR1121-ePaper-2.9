@@ -36,7 +36,7 @@ loss during the test can leave this explicit path on the card.
 ## Build and run
 
 First follow the [board preparation instructions](../README.md#board-manager-integration).
-Use `waveshare/waveshare_boards` and generate `components/gen_bmgr_codes`
+Use `waveshare/waveshare_boards >=0.1.3` and generate `components/gen_bmgr_codes`
 before building.
 
 Ubuntu Bash, with the selected ESP-IDF environment loaded, from the repository root:
@@ -45,7 +45,6 @@ Ubuntu Bash, with the selected ESP-IDF environment loaded, from the repository r
 cd examples/esp-idf/07_sd_card
 python -m pip install esp-bmgr-assist==0.8.3
 idf.py bmgr -l
-# If the component lacks this board, complete the manual preparation linked above.
 idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
 idf.py set-target esp32s3
 idf.py build

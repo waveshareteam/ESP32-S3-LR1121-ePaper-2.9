@@ -28,9 +28,8 @@
 09 保留 Wi-Fi/BLE、LoRa、按键、电量监控和低功耗流程。删除持续压力测试
 不等于关闭所有内存自检，也没有屏蔽真实错误或关闭棕断、看门狗保护。
 
-板型仍由独立的 `waveshare/waveshare_boards` 组件提供，本仓库不携带
-`boards`、`gen_bmgr_codes`、下载组件或构建残留。组件缺板型时继续使用下文的
-手动准备流程；不要在使用手册中要求把板型添加到产品仓库。
+板型由已发布的 `waveshare/waveshare_boards >=0.1.3` 组件自动提供，
+无需手动复制。本仓库不携带 `boards`、`gen_bmgr_codes`、下载组件或构建残留。
 
 ## 采用当前编号
 
@@ -71,9 +70,8 @@ python -m pip install esp-bmgr-assist==0.8.3
 idf.py bmgr -l
 ```
 
-当前下载的 `waveshare/waveshare_boards` 0.1.2 尚无该板型。按现阶段流程，
-将板级库维护者提供的 `esp32_s3_lr1121_epaper_2_9` 文件夹手动复制到本示例的
-`managed_components/waveshare__waveshare_boards/boards/`，再执行：
+`idf.py bmgr -l` 自动下载包含该板型的 `waveshare/waveshare_boards >=0.1.3`
+组件。随后选择板型并编译：
 
 ```bash
 idf.py bmgr -b esp32_s3_lr1121_epaper_2_9
@@ -87,10 +85,9 @@ Arduino 与 ESP-IDF 的 07 均通过墨水屏显示卡容量、挂载、读写�
 最终显示 `SD PASS` 或 `SD FAIL`，完成刷新后休眠屏幕并关闭共享供电。
 ESP-IDF 07 默认启用 FATFS 长文件名，显示和 SD 操作使用独立的 16 KiB
 任务栈，不依赖已有配置中的主任务栈大小；已有 `sdkconfig` 的长文件名
-调整方法见该示例 README。后续板级组件发布该板型后，省略
-手动复制步骤。每个示例的下载组件各自独立；清理或更新组件后需要重新确认
-板型是否存在。板型与
-生成代码均不提交到本仓库，自动 CI 需等待板型进入已发布组件。
+调整方法见该示例 README。每个示例的下载组件各自独立；清理或更新组件后，
+重新列出板型并生成配置。下载组件与生成代码均不提交到本仓库，
+CI 使用相同的组件下载和板型生成流程。
 
 ## 版本与构建记录
 

@@ -155,7 +155,7 @@ RadioLib 的 session 缓冲区不仅包含帧计数器和 RX 参数，也包含 
 
 ## 构建、烧录和监视
 
-先按[板型准备说明](../README.md#board-manager-integration)下载组件，并在组件尚未发布此板型期间手动补入对应板型目录。Board Manager 由 `waveshare/waveshare_boards` 间接提供，本仓库不保存板型副本。
+先按[板型准备说明](../README.md#board-manager-integration)下载组件并生成板级配置。`waveshare/waveshare_boards >=0.1.3` 已包含该板型，并间接提供 Board Manager，本仓库不保存板型副本。
 
 本示例不提交 `dependencies.lock`、下载组件或 `components/gen_bmgr_codes`；Component Manager 和 Board Manager 在本机重新生成所需文件。
 

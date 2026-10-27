@@ -46,9 +46,8 @@ completed breathing cycle.
 ## List boards, build and flash
 
 First follow the [board preparation instructions](../README.md#board-manager-integration).
-The board is supplied by `waveshare/waveshare_boards`; while the published
-component lacks this product, manually copy the matching board folder into the
-downloaded component as described there. No board YAML is stored in this repository.
+The board is supplied by `waveshare/waveshare_boards >=0.1.3` and is downloaded
+automatically. No board YAML is stored in this repository.
 
 Activate ESP-IDF and run from this example directory (Ubuntu Bash):
 
@@ -64,7 +63,7 @@ The first listing downloads dependencies on a fresh project without running
 `reconfigure`. `main/idf_component.yml` declares `waveshare/waveshare_boards`,
 which brings in Board Manager transitively. Listing does not generate board
 code; board selection creates `components/gen_bmgr_codes` locally. That generated
-component and manually copied board files must not be committed. For ordinary
+component and downloaded dependencies must not be committed. For ordinary
 clean rebuilds, retain the generated component and use `idf.py fullclean`.
 
 Replace `PORT` with the board's serial port. Confirm that the observed colors
