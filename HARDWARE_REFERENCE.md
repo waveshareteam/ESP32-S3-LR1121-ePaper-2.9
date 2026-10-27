@@ -4,7 +4,7 @@ Product: ESP32-S3-LR1121-ePaper-2.9
 Hardware revision: 1.1
 
 The board uses an ESP32-S3-WROOM-1-N16R8 module with 16 MB Flash and 8 MB OPI
-PSRAM. It integrates a 2.9-inch monochrome e-paper display with a resolution
+PSRAM. It integrates a 2.9-inch four-level grayscale e-paper display with a resolution
 of 296 × 128 pixels, an LR1121 radio, an AXP2602 battery gauge, a PCF85063A
 RTC, a MicroSD card slot, and one WS2812 LED.
 

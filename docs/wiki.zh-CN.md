@@ -1,7 +1,7 @@
 # ESP32-S3-LR1121-ePaper-2.9 使用说明
 
 ESP32-S3-LR1121-ePaper-2.9 集成 ESP32-S3、LR1121 射频芯片和 2.9 英寸
-黑白电子纸，提供 RTC、电量计、microSD 卡槽、WS2812 和按键，适合周期
+四灰度电子纸，提供 RTC、电量计、microSD 卡槽、WS2812 和按键，适合周期
 采集、LoRa/LoRaWAN 通信及电池供电的信息显示应用。
 
 ![ESP32-S3-LR1121-ePaper-2.9](images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp)
@@ -14,7 +14,7 @@ ESP32-S3-LR1121-ePaper-2.9 集成 ESP32-S3、LR1121 射频芯片和 2.9 英寸
 | 主控模组 | ESP32-S3-WROOM-1-N16R8 |
 | 存储 | 16 MB Flash、8 MB OPI PSRAM |
 | 无线连接 | 2.4 GHz Wi-Fi、Bluetooth LE |
-| 电子纸 | 2.9 英寸，296 × 128 像素，黑白显示 |
+| 电子纸 | 2.9 英寸，296 × 128 像素，四灰度显示 |
 | 射频芯片 | Semtech LR1121 |
 | RTC | PCF85063A，I2C 地址 0x51 |
 | 电量计 | AXP2602，I2C 地址 0x62 |

@@ -11,7 +11,7 @@
 | Flash | 16 MB |
 | PSRAM | 8 MB OPI PSRAM |
 | 无线连接 | 2.4 GHz Wi-Fi、Bluetooth LE |
-| 电子纸 | 2.9 英寸，296 × 128 像素，黑白显示 |
+| 电子纸 | 2.9 英寸，296 × 128 像素，四灰度显示 |
 | LoRa 射频芯片 | Semtech LR1121 |
 | RTC | PCF85063A，I2C 地址 0x51 |
 | 电量计 | AXP2602，I2C 地址 0x62 |
