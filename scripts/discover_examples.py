@@ -105,6 +105,19 @@ def load_config(repo: Path, config_path: str) -> dict[str, Any]:
     return data
 
 
+def source_only_projects(repo: Path, config: dict[str, Any]) -> set[str]:
+    """Use the same explicit exclusions for CI matrices and release coverage."""
+    paths = config.get("source_only_examples", [])
+    if not isinstance(paths, list) or any(not isinstance(path, str) for path in paths):
+        raise ValueError("source_only_examples must be a list of example paths")
+    excluded = set(paths)
+    known = {entry["path"] for entry in discover_esp_idf(repo) + discover_arduino(repo)}
+    unknown = excluded - known
+    if unknown:
+        raise ValueError("unknown source-only examples: " + ", ".join(sorted(unknown)))
+    return excluded
+
+
 def split_versions(value: str | None, configured: Any) -> list[str]:
     if value is not None:
         versions = [item.strip() for item in value.split(",") if item.strip()]
@@ -124,10 +137,12 @@ def build_matrix(args: argparse.Namespace) -> tuple[dict[str, list[dict[str, str
     config = load_config(repo, args.config)
     board = config.get("board", {})
     selector = normalize(args.selector)
+    excluded = source_only_projects(repo, config)
 
     if args.surface == "esp-idf":
         discovered = discover_esp_idf(repo)
-        selected = [entry for entry in discovered if selector_matches(entry, selector)]
+        selected = [entry for entry in discovered
+                    if entry["path"] not in excluded and selector_matches(entry, selector)]
         idf_config = config.get("esp_idf", {})
         experimental = getattr(args, "idf_experimental", False)
         if experimental:
@@ -153,7 +168,8 @@ def build_matrix(args: argparse.Namespace) -> tuple[dict[str, list[dict[str, str
             include = [entry | {"idf": version, "target": target} for entry in selected for version in versions]
     else:
         discovered = discover_arduino(repo)
-        selected = [entry for entry in discovered if selector_matches(entry, selector)]
+        selected = [entry for entry in discovered
+                    if entry["path"] not in excluded and selector_matches(entry, selector)]
         arduino = config.get("arduino", {})
         cli = str(arduino.get("cli") or DEFAULT_ARDUINO_CLI)
         core = args.arduino_core or str(arduino.get("core") or DEFAULT_ARDUINO_CORE)
@@ -171,6 +187,11 @@ def build_matrix(args: argparse.Namespace) -> tuple[dict[str, list[dict[str, str
             f"expected {args.expect_examples} {args.surface} examples, discovered {len(discovered)}"
         )
     if selector not in ("", "all") and not selected and not args.allow_empty_selector:
+        if any(selector_matches(entry, selector) for entry in discovered):
+            raise ValueError(
+                f"selector {args.selector!r} only matches source-only examples; "
+                "configure credentials and build locally"
+            )
         raise ValueError(f"selector {args.selector!r} matched no {args.surface} examples")
     return {"include": include}, len(discovered)
 

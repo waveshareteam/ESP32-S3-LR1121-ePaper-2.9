@@ -36,7 +36,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "all, an example name, or a repo-relative example path"
+        description: "all or a CI-enabled example (01-09) name/path; LoRaWAN requires local configuration"
         required: false
         default: "all"
 
@@ -325,7 +325,7 @@ jobs:
           pattern: firmware-*
           path: release-artifacts
           merge-multiple: true
-      - name: Validate complete example firmware set
+      - name: Validate complete CI-enabled firmware set
         run: python3 releases/validate_release_artifacts.py release-artifacts
       - name: Create GitHub Release
         env:

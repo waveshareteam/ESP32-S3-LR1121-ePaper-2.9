@@ -2,7 +2,10 @@
 
 ## Source-built example packages
 
-Successful CI builds call `releases/package_firmware.py`.
+CI builds examples 01–09 for ESP-IDF and Arduino, producing 18 stable firmware
+packages through `releases/package_firmware.py`. LoRaWAN examples 10–13 require
+your own IDs and keys; configure their source and build locally. They are excluded
+from automated builds and release packages.
 Each ZIP contains a manifest, SHA-256 checksums, flash arguments, Windows and
 POSIX flash helpers, a combined image at offset `0x0`, and the original
 binary segments.

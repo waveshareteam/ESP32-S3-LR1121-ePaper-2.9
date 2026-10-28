@@ -44,7 +44,9 @@ Read the selected example's README for its configuration and operation.
 
 Before running a LoRaWAN example, enter your network credentials in its
 configuration header and set the region, frequency plan, antenna, and transmit
-power for your deployment.
+power for your deployment. LoRaWAN examples 10–13 are provided as source only:
+configure your IDs and keys, then build locally. They are excluded from CI builds
+and release firmware packages.
 
 ## CI and firmware packaging
 
@@ -57,7 +59,8 @@ The build matrix in [`config/ci.json`](config/ci.json) contains:
 | Arduino-ESP32 | 3.3.11 |
 
 The workflow in [`.github/workflows/examples.yml`](.github/workflows/examples.yml)
-discovers the numbered examples and defines their build jobs. The packaging
+discovers all 13 examples per framework and builds examples 01–09. Stable
+releases contain 18 firmware packages (9 ESP-IDF and 9 Arduino). The packaging
 tools in [`releases/`](releases/) create ZIP archives containing a manifest,
 SHA-256 checksums, binary segments, a combined image, and Windows/POSIX flash
 helpers. The workflow configures GitHub Release publication for `v*` tags

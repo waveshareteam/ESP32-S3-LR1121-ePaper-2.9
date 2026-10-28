@@ -1,7 +1,11 @@
 # Firmware archives
 
-The `Build Examples and Firmware` workflow is designed to package every
-successful ESP-IDF and Arduino source build as a directly flashable ZIP.
+The `Build Examples and Firmware` workflow packages examples 01–09 as directly
+flashable ZIPs: 9 ESP-IDF packages and 9 Arduino packages per stable release.
+LoRaWAN examples 10–13 are source only because they require your own IDs and keys.
+Configure them and build locally; CI does not compile or publish their firmware.
+The release validator uses the same `source_only_examples` configuration as CI
+and rejects archives for those excluded examples.
 
 Each archive contains:
 

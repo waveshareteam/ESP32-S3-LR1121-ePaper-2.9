@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate that release archives cover every first-party example."""
+"""Validate that release archives cover every CI-enabled first-party example."""
 
 from __future__ import annotations
 
@@ -12,24 +12,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_firmware import validate_zip
 
-
-SURFACES = {
-    "esp-idf": Path("examples/esp-idf"),
-    "arduino": Path("examples/arduino"),
-}
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from discover_examples import (
+    DEFAULT_CONFIG,
+    discover_arduino,
+    discover_esp_idf,
+    load_config,
+    source_only_projects,
+)
 
 
 def expected_projects(repo: Path) -> set[str]:
-    projects: set[str] = set()
-    for framework, relative_root in SURFACES.items():
-        root = repo / relative_root
-        for entry in root.iterdir():
-            if not entry.is_dir():
-                continue
-            marker = entry / ("CMakeLists.txt" if framework == "esp-idf" else f"{entry.name}.ino")
-            if marker.is_file():
-                projects.add(entry.relative_to(repo).as_posix())
-    return projects
+    config = load_config(repo, DEFAULT_CONFIG.as_posix())
+    excluded = source_only_projects(repo, config)
+    return {entry["path"] for entry in discover_esp_idf(repo) + discover_arduino(repo)
+            if entry["path"] not in excluded}
 
 
 def read_manifest(path: Path) -> dict:
@@ -58,7 +55,7 @@ def validate_release(repo: Path, artifact_dir: Path) -> tuple[int, int]:
         if not project.startswith(expected_prefix):
             raise ValueError(f"{archive.name} has inconsistent framework and project_path")
         if project not in expected:
-            raise ValueError(f"{archive.name} references an unknown example: {project}")
+            raise ValueError(f"{archive.name} references an unknown or source-only example: {project}")
         covered.add(project)
 
     missing = expected - covered
