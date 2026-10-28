@@ -1,5 +1,15 @@
 {
   "schema_version": 1,
+  "source_only_examples": [
+    "examples/esp-idf/10_lr1121_lorawan",
+    "examples/esp-idf/11_LoRaWAN_ABP",
+    "examples/esp-idf/12_LoRaWAN_Class_C",
+    "examples/esp-idf/13_LoRaWAN_Multicast",
+    "examples/arduino/10_lr1121_lorawan",
+    "examples/arduino/11_LoRaWAN_ABP",
+    "examples/arduino/12_LoRaWAN_Class_C",
+    "examples/arduino/13_LoRaWAN_Multicast"
+  ],
   "board": {
     "name": "ESP32-S3-LR1121-ePaper-2.9",
     "revision": "1.1",

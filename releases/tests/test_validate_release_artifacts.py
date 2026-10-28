@@ -20,6 +20,8 @@ class ValidateReleaseArtifactsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.repo = Path(self.temporary.name)
+        (self.repo / "config").mkdir()
+        (self.repo / "config/ci.json").write_text(json.dumps({"schema_version": 1}))
         self.artifacts = self.repo / "artifacts"
         self.artifacts.mkdir()
         idf = self.repo / "examples/esp-idf/01_idf"
@@ -56,6 +58,30 @@ class ValidateReleaseArtifactsTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "examples/arduino/01_arduino"):
             MODULE.validate_release(self.repo, self.artifacts)
+
+    @mock.patch.object(MODULE, "validate_zip")
+    def test_source_only_examples_are_not_required_and_cannot_be_released(
+        self, validate_zip: mock.Mock
+    ) -> None:
+        excluded = []
+        for surface in ("esp-idf", "arduino"):
+            project = self.repo / "examples" / surface / "10_lorawan"
+            project.mkdir()
+            marker = "CMakeLists.txt" if surface == "esp-idf" else "10_lorawan.ino"
+            (project / marker).touch()
+            excluded.append(project.relative_to(self.repo).as_posix())
+        (self.repo / "config/ci.json").write_text(
+            json.dumps({"schema_version": 1, "source_only_examples": excluded})
+        )
+        self.create_archive("idf.zip", "esp-idf", "examples/esp-idf/01_idf")
+        self.create_archive("arduino.zip", "arduino", "examples/arduino/01_arduino")
+        self.assertEqual(MODULE.validate_release(self.repo, self.artifacts), (2, 2))
+        for project in excluded:
+            with self.subTest(project=project):
+                archive = self.create_archive("lorawan.zip", project.split("/")[1], project)
+                with self.assertRaisesRegex(ValueError, "source-only example"):
+                    MODULE.validate_release(self.repo, self.artifacts)
+                archive.unlink()
 
 
 if __name__ == "__main__":

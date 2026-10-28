@@ -124,6 +124,64 @@ class DiscoverExamplesTests(unittest.TestCase):
         self.assertEqual(count, 0)
         self.assertEqual(matrix, {"include": []})
 
+    def configure_source_only(self) -> None:
+        excluded = []
+        for surface in ("esp-idf", "arduino"):
+            for name in ("06_pingpong", "10_lorawan"):
+                project = self.repo / "examples" / surface / name
+                project.mkdir(parents=True)
+                marker = "CMakeLists.txt" if surface == "esp-idf" else f"{name}.ino"
+                (project / marker).touch()
+            excluded.append(f"examples/{surface}/10_lorawan")
+        path = self.repo / "config/ci.json"
+        config = json.loads(path.read_text())
+        config["source_only_examples"] = excluded
+        path.write_text(json.dumps(config))
+
+    def test_source_only_projects_are_counted_but_not_built(self) -> None:
+        self.configure_source_only()
+        for surface in ("esp-idf", "arduino"):
+            with self.subTest(surface=surface):
+                args = self.args(surface)
+                args.expect_examples = 2
+                matrix, count = discover_examples.build_matrix(args)
+                self.assertEqual(count, 2)
+                self.assertEqual({item["name"] for item in matrix["include"]}, {"06_pingpong"})
+
+    def test_manual_selector_cannot_build_source_only_projects(self) -> None:
+        self.configure_source_only()
+        for surface in ("esp-idf", "arduino"):
+            for selector in ("10_lorawan", f"examples/{surface}/10_lorawan"):
+                with self.subTest(surface=surface, selector=selector):
+                    args = self.args(surface, selector)
+                    with self.assertRaisesRegex(ValueError, "source-only.*build locally"):
+                        discover_examples.build_matrix(args)
+                    args.allow_empty_selector = True
+                    matrix, _ = discover_examples.build_matrix(args)
+                    self.assertEqual(matrix, {"include": []})
+
+    def test_source_only_policy_rejects_stale_paths(self) -> None:
+        self.configure_source_only()
+        (self.repo / "examples/arduino/10_lorawan/10_lorawan.ino").unlink()
+        with self.assertRaisesRegex(ValueError, "unknown source-only examples"):
+            discover_examples.build_matrix(self.args("esp-idf"))
+
+    def test_source_only_policy_rejects_string_instead_of_list(self) -> None:
+        path = self.repo / "config/ci.json"
+        config = json.loads(path.read_text())
+        config["source_only_examples"] = "examples/esp-idf/10_lorawan"
+        path.write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError, "must be a list"):
+            discover_examples.build_matrix(self.args("esp-idf"))
+
+    def test_source_only_projects_are_excluded_from_experimental_matrix(self) -> None:
+        self.configure_source_only()
+        args = self.configure_experimental()
+        matrix, count = discover_examples.build_matrix(args)
+        self.assertEqual(count, 3)
+        self.assertEqual({item["name"] for item in matrix["include"]},
+                         {"06_pingpong", "09_demo"})
+
     def configure_experimental(self, revision="08e0d30a74ad0bfd5a34933142b80f45619ee410"):
         path = self.repo / "config/ci.json"
         config = json.loads(path.read_text())

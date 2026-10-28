@@ -41,7 +41,8 @@ Arduino 用户将 IDE 的“项目文件夹位置”设置为本仓库的 `examp
 | 13 | `13_LoRaWAN_Multicast` | `13_LoRaWAN_Multicast` | LoRaWAN 组播 |
 
 运行 LoRaWAN 示例前，请在配置头文件中填写自己的网络凭据，并按部署环境
-设置区域、频率计划、天线和发射功率。
+设置区域、频率计划、天线和发射功率。LoRaWAN 示例 10–13 仅提供源码，
+填写自己的 ID 和 Key 后在本地编译，不参与 CI 编译和 Release 固件打包。
 
 ## CI 与固件打包
 
@@ -54,7 +55,8 @@ Arduino 用户将 IDE 的“项目文件夹位置”设置为本仓库的 `examp
 | Arduino-ESP32 | 3.3.11 |
 
 [`.github/workflows/examples.yml`](.github/workflows/examples.yml) 自动发现编号
-示例并定义构建任务。[`releases/`](releases/) 中的工具生成 ZIP 固件包，包含
+示例，每套框架保留 13 个源码示例，仅编译 01–09。稳定版 Release 包含
+18 个固件包（ESP-IDF 和 Arduino 各 9 个）。[`releases/`](releases/) 中的工具生成 ZIP 固件包，包含
 manifest、SHA-256 校验值、原始分段、合并固件和 Windows/POSIX 烧录脚本。
 工作流为 `v*` 标签配置了 GitHub Release 发布步骤，在固件产物集合通过检查后执行。
 
